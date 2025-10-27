@@ -314,4 +314,5 @@ def handle_update_request():
 if __name__ == '__main__':
     # Démarrer le serveur web directement
     # Le bot Discord sera initialisé de manière asynchrone
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, debug=False, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
