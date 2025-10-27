@@ -44,14 +44,16 @@ if is_port_in_use(5000):
     print("Veuillez arrêter l'autre application ou modifier le port dans app.py")
     sys.exit(1)
 
-print("� Démarrage du Panel d'Administration World Dominion...")
-print("� Configuration :")
+print("🌍 Démarrage du Panel d'Administration World Dominion...")
+print("📋 Configuration :")
 print(f"   - Discord Client ID: {os.getenv('DISCORD_CLIENT_ID')}")
 print(f"   - Supabase URL: {os.getenv('SUPABASE_URL')}")
 print(f"   - Admin Roles: {os.getenv('ADMIN_ROLE_IDS')}")
 print()
-print(f"� Le panel sera accessible sur : {os.getenv('HOST_IP', 'http://localhost:5000')}")
-print("� Seuls les administrateurs Discord peuvent se connecter")
+# URL du service - Render.com fournit RENDER_EXTERNAL_URL automatiquement
+panel_url = os.getenv('RENDER_EXTERNAL_URL') or os.getenv('WEB_PANEL_URL') or os.getenv('HOST_IP', 'http://localhost:5000')
+print(f"🚀 Le panel sera accessible sur : {panel_url}")
+print("🔐 Seuls les administrateurs Discord peuvent se connecter")
 print()
 print("⚠️  Pour arrêter le serveur, utilisez Ctrl+C")
 print()
@@ -64,7 +66,7 @@ if __name__ == '__main__':
         port = int(os.environ.get('PORT', 10000))
         socketio.run(app, debug=False, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
-        print("\n� Arrêt du serveur...")
+        print("\n🛑 Arrêt du serveur...")
     except Exception as e:
         print(f"\n❌ Erreur lors du démarrage : {e}")
         sys.exit(1)

@@ -1,15 +1,15 @@
-# � World Dominion - Bot Discord de Stratégie
+# 🌍 World Dominion - Bot Discord de Stratégie
 
 Bot Discord multijoueur de stratégie, économie et politique mondiale. Chaque joueur dirige un pays et doit équilibrer économie, politique et guerre pour dominer le monde.
 
-## � Fonctionnalités Principales
+## 🎯 Fonctionnalités Principales
 
-### �️ Système Politique
+### 🏛️ Système Politique
 - **8 niveaux hiérarchiques** : De Recrue à Chef d'État
 - **Élections et coups d'État** : Démocratie et autoritarisme
 - **Promotions** : Évolution selon l'expérience et la loyauté
 
-### � Économie Complexe
+### 💰 Économie Complexe
 - **6 ressources** : Argent, Nourriture, Métal, Pétrole, Énergie, Matériaux
 - **Production et commerce** : Système d'échange entre pays
 - **Impôts et budget** : Gestion financière nationale
@@ -19,12 +19,12 @@ Bot Discord multijoueur de stratégie, économie et politique mondiale. Chaque j
 - **Guerres et espionnage** : Conflits stratégiques
 - **Territoires** : Expansion et défense
 
-### �️ Diplomatie
+### 🕊️ Diplomatie
 - **Alliances** : Coopération entre nations
 - **Négociations** : Traités et accords
 - **Embargos** : Guerre économique
 
-## � Démarrage Rapide
+## 🚀 Démarrage Rapide
 
 ### Option 1 : Démarrage Simple (Recommandé)
 ```bash
@@ -76,22 +76,22 @@ cd web
 python run.py
 ```
 
-## � Commandes Disponibles
+## 📋 Commandes Disponibles
 
-### �️ Gestion des Pays
+### 🏳️ Gestion des Pays
 - `/rejoindre` - Rejoindre un pays (menu déroulant)
 - `/pays` - Consulter les informations d'un pays
 - `/classement` - Afficher le classement mondial
 - `/lock-pays` - Verrouiller/déverrouiller un pays (Chef/Vice-Chef)
 
-### � Économie
+### 💰 Économie
 - `/produire` - Produire des ressources
 - `/commerce` - Échanger avec d'autres pays
 - `/taxe` - Fixer les impôts (Chef d'État)
 - `/banque` - Consulter le budget national
 - `/travail` - Travailler pour gagner de l'argent
 
-### �️ Politique
+### 🏛️ Politique
 - `/profil` - Consulter votre profil
 - `/promouvoir` - Promouvoir un joueur (Chef d'État)
 - `/élection` - Organiser une élection
@@ -103,34 +103,34 @@ python run.py
 - `/défendre` - Renforcer les défenses
 - `/territoire` - Consulter les territoires
 
-### �️ Diplomatie
+### 🕊️ Diplomatie
 - `/alliance` - Gérer les alliances
 - `/négocier` - Négocier avec un pays
 - `/embargo` - Mettre un embargo (Chef d'État)
 
-### � Administration
+### 🔧 Administration
 - `/create` - Créer un pays (Admin)
 - `/own` - Assigner un pays à un joueur (Admin)
 - `/admin-list` - Lister tous les pays (Admin)
 - `/delete` - Supprimer des éléments d'un pays (Admin)
 - `/web-panel` - Obtenir l'URL du panel web (Admin)
 
-### � Événements
+### 📅 Événements
 - `/events` - Consulter les événements récents
 - `/trigger-event` - Déclencher un événement (Admin)
 
-## � Panel d'Administration Web
+## 🌐 Panel d'Administration Web
 
 Le bot inclut un **panel d'administration web complet** accessible via `/web-panel` :
 
-### � Fonctionnalités du Panel
+### 🎯 Fonctionnalités du Panel
 - **Dashboard en temps réel** : Statistiques et graphiques
 - **Gestion complète des pays** : CRUD avec interface graphique
 - **Administration des joueurs** : Modification des rôles et ressources
 - **Contrôle des guerres** : Suivi et gestion des conflits
 - **Outils avancés** : Réinitialisation, sauvegarde, logs
 
-### � Accès
+### 🔐 Accès
 - **URL** : http://localhost:5000 (par défaut)
 - **Authentification** : Discord OAuth2
 - **Permissions** : Seuls les administrateurs Discord
@@ -167,7 +167,7 @@ WEB_PANEL_URL=http://localhost:5000
 4. Ajouter `http://localhost:5000/callback` dans "Redirects"
 5. Copier le Client ID et Client Secret
 
-## �️ Base de Données
+## 🗄️ Base de Données
 
 Le bot utilise **Supabase** (PostgreSQL) avec les tables suivantes :
 - `countries` - Informations des pays
@@ -176,7 +176,7 @@ Le bot utilise **Supabase** (PostgreSQL) avec les tables suivantes :
 - `events` - Événements du jeu
 - `alliances` - Alliances entre pays
 
-## �️ Architecture
+## 🏗️ Architecture
 
 ```
 World Dominion/
@@ -203,7 +203,7 @@ World Dominion/
     └── templates/       # Interface web
 ```
 
-## � Dépannage
+## 🚨 Dépannage
 
 ### Problèmes Courants
 
@@ -225,7 +225,7 @@ World Dominion/
 ### Logs
 Les logs sont disponibles dans le dossier `logs/` et dans la console.
 
-## � Support
+## 🤝 Support
 
 Pour toute question ou problème :
 1. Vérifier les logs de la console
@@ -235,4 +235,4 @@ Pour toute question ou problème :
 
 ---
 
-**World Dominion** - Dominez le monde par la stratégie ! ��
+**World Dominion** - Dominez le monde par la stratégie ! 🌍👑
