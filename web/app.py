@@ -94,20 +94,28 @@ class WebAdminManager:
 
 admin_manager = WebAdminManager()
 
+# Helper function pour vérifier si l'utilisateur connecté est admin
+def is_user_admin():
+    """Vérifier si l'utilisateur dans la session est admin"""
+    if 'user' not in session:
+        return False
+    return session['user'].get('admin', False)
+
 # Routes principales
 @app.route('/')
 def index():
     if 'user' not in session:
         return redirect(url_for('login'))
     
-    if not admin_manager.is_admin(session['user']):
+    # Vérifier si l'utilisateur est admin (flag dans la session)
+    if not is_user_admin():
         return render_template('unauthorized.html')
     
     return render_template('dashboard.html')
 
 @app.route('/login')
 def login():
-    if 'user' in session and admin_manager.is_admin(session['user']):
+    if 'user' in session and is_user_admin():
         return redirect(url_for('index'))
     
     discord_auth_url = f"https://discord.com/api/oauth2/authorize?client_id={DISCORD_CLIENT_ID}&redirect_uri={DISCORD_REDIRECT_URI}&response_type=code&scope=identify%20guilds"
@@ -175,8 +183,8 @@ def callback():
                         print(f"📝 Réponse: {member_response.text[:200]}")
                         guild['roles'] = []
             
+            # Attacher les guildes aux données utilisateur temporairement pour la vérification
             user_data['guilds'] = guilds_data
-            session['user'] = user_data
             
             # Debug: afficher les informations de l'utilisateur
             print(f"👤 Utilisateur connecté: {user_data['username']}")
@@ -188,6 +196,14 @@ def callback():
             print(f"🔐 Est admin: {is_admin}")
             
             if is_admin:
+                # Ne stocker que les données minimales dans la session pour éviter un cookie trop gros
+                session['user'] = {
+                    'id': user_data['id'],
+                    'username': user_data['username'],
+                    'avatar': user_data.get('avatar'),
+                    'discriminator': user_data.get('discriminator'),
+                    'admin': True
+                }
                 print("✅ Redirection vers le dashboard")
                 return redirect(url_for('index'))
             else:
@@ -207,7 +223,7 @@ def logout():
 # API Routes
 @app.route('/api/countries')
 def api_countries():
-    if not admin_manager.is_admin(session.get('user')):
+    if not is_user_admin():
         return jsonify({'error': 'Unauthorized'}), 403
     
     try:
@@ -218,7 +234,7 @@ def api_countries():
 
 @app.route('/api/countries/<country_id>', methods=['GET', 'PUT', 'DELETE'])
 def api_country(country_id):
-    if not admin_manager.is_admin(session.get('user')):
+    if not is_user_admin():
         return jsonify({'error': 'Unauthorized'}), 403
     
     try:
@@ -249,7 +265,7 @@ def api_country(country_id):
 
 @app.route('/api/players')
 def api_players():
-    if not admin_manager.is_admin(session.get('user')):
+    if not is_user_admin():
         return jsonify({'error': 'Unauthorized'}), 403
     
     try:
@@ -260,7 +276,7 @@ def api_players():
 
 @app.route('/api/players/<player_id>', methods=['PUT', 'DELETE'])
 def api_player(player_id):
-    if not admin_manager.is_admin(session.get('user')):
+    if not is_user_admin():
         return jsonify({'error': 'Unauthorized'}), 403
     
     try:
@@ -278,7 +294,7 @@ def api_player(player_id):
 
 @app.route('/api/wars')
 def api_wars():
-    if not admin_manager.is_admin(session.get('user')):
+    if not is_user_admin():
         return jsonify({'error': 'Unauthorized'}), 403
     
     try:
@@ -289,7 +305,7 @@ def api_wars():
 
 @app.route('/api/events')
 def api_events():
-    if not admin_manager.is_admin(session.get('user')):
+    if not is_user_admin():
         return jsonify({'error': 'Unauthorized'}), 403
     
     try:
@@ -300,7 +316,7 @@ def api_events():
 
 @app.route('/api/statistics')
 def api_statistics():
-    if not admin_manager.is_admin(session.get('user')):
+    if not is_user_admin():
         return jsonify({'error': 'Unauthorized'}), 403
     
     try:
@@ -328,7 +344,7 @@ def api_statistics():
 # WebSocket events
 @socketio.on('connect')
 def handle_connect():
-    if not admin_manager.is_admin(session.get('user')):
+    if not is_user_admin():
         emit('error', {'message': 'Unauthorized'})
         return False
     
@@ -340,7 +356,7 @@ def handle_disconnect():
 
 @socketio.on('request_update')
 def handle_update_request():
-    if not admin_manager.is_admin(session.get('user')):
+    if not is_user_admin():
         emit('error', {'message': 'Unauthorized'})
         return
     
