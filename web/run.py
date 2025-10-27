@@ -59,9 +59,8 @@ print("⚠️  Pour arrêter le serveur, utilisez Ctrl+C")
 print()
 
 # Importer et démarrer l'application
-from app import socketio, app
-
 if __name__ == "__main__":
+    from app import socketio, app
     port = int(os.environ.get('PORT', 5000))
     socketio.run(app, debug=False, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
 

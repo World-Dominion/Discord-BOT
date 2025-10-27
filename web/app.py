@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_socketio import SocketIO, emit
-from app import socketio, app
 import os
 from supabase import create_client, Client
 import json
