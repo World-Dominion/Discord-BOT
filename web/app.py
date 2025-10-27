@@ -85,6 +85,7 @@ def login():
 def callback():
     code = request.args.get('code')
     if not code:
+        print("❌ Pas de code OAuth fourni")
         return redirect(url_for('login'))
     
     # Échanger le code contre un token
@@ -103,6 +104,8 @@ def callback():
     import requests
     response = requests.post('https://discord.com/api/oauth2/token', data=data, headers=headers)
     
+    print(f"🔐 Réponse OAuth: {response.status_code}")
+    
     if response.status_code == 200:
         token_data = response.json()
         access_token = token_data['access_token']
@@ -112,41 +115,56 @@ def callback():
         user_response = requests.get('https://discord.com/api/users/@me', headers=headers)
         guilds_response = requests.get('https://discord.com/api/users/@me/guilds', headers=headers)
         
+        print(f"📊 User response: {user_response.status_code}, Guilds response: {guilds_response.status_code}")
+        
         if user_response.status_code == 200 and guilds_response.status_code == 200:
             user_data = user_response.json()
             guilds_data = guilds_response.json()
             
+            print(f"👤 Utilisateur: {user_data.get('username')}")
+            print(f"🔍 Nombre de guildes: {len(guilds_data)}")
+            
             # Ajouter les rôles pour chaque serveur
             for guild in guilds_data:
                 if guild['id'] == str(os.getenv('DISCORD_GUILD_ID')):
+                    print(f"✅ Guilde trouvée: {guild.get('name')}")
                     # Récupérer les rôles de l'utilisateur dans ce serveur
                     member_response = requests.get(f'https://discord.com/api/guilds/{guild["id"]}/members/{user_data["id"]}', 
                                                  headers={'Authorization': f'Bot {DISCORD_BOT_TOKEN}'})
+                    print(f"🔍 Status récupération membre: {member_response.status_code}")
+                    
                     if member_response.status_code == 200:
                         member_data = member_response.json()
                         guild['roles'] = member_data.get('roles', [])
+                        print(f"✅ Rôles récupérés: {len(guild['roles'])} rôles")
                     else:
                         # Si on ne peut pas récupérer les rôles, essayer une approche alternative
-                        print(f"Erreur récupération rôles: {member_response.status_code}")
+                        print(f"❌ Erreur récupération rôles: {member_response.status_code}")
+                        print(f"📝 Réponse: {member_response.text[:200]}")
                         guild['roles'] = []
             
             user_data['guilds'] = guilds_data
             session['user'] = user_data
             
             # Debug: afficher les informations de l'utilisateur
-            print(f"Utilisateur connecté: {user_data['username']}")
-            print(f"Guildes: {[g['name'] for g in guilds_data]}")
-            print(f"Rôles admin configurés: {ADMIN_ROLE_IDS}")
+            print(f"👤 Utilisateur connecté: {user_data['username']}")
+            print(f"📋 Guildes: {[g['name'] for g in guilds_data]}")
+            print(f"🔑 Rôles admin configurés: {ADMIN_ROLE_IDS}")
             
             # Vérifier les permissions
             is_admin = admin_manager.is_admin(user_data)
-            print(f"Est admin: {is_admin}")
+            print(f"🔐 Est admin: {is_admin}")
             
             if is_admin:
+                print("✅ Redirection vers le dashboard")
                 return redirect(url_for('index'))
             else:
+                print("❌ Accès refusé - pas admin")
                 return render_template('unauthorized.html')
+        else:
+            print(f"❌ Erreur récupération données: User {user_response.status_code}, Guilds {guilds_response.status_code}")
     
+    print("❌ Erreur OAuth")
     return redirect(url_for('login'))
 
 @app.route('/logout')
