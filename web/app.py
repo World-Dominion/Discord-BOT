@@ -46,8 +46,40 @@ class WebAdminManager:
                 user_roles = guild.get('roles', [])
                 print(f"🔍 Rôles de l'utilisateur: {user_roles}")
                 
+                # Si pas de rôles, vérifier via l'API Discord directement
+                if not user_roles:
+                    print("⚠️ Pas de rôles dans guild, tentative récupération via API")
+                    try:
+                        import requests
+                        member_response = requests.get(
+                            f'https://discord.com/api/guilds/{guild_id}/members/{user_data["id"]}',
+                            headers={'Authorization': f'Bot {DISCORD_BOT_TOKEN}'}
+                        )
+                        if member_response.status_code == 200:
+                            member_data = member_response.json()
+                            user_roles = member_data.get('roles', [])
+                            print(f"✅ Rôles récupérés via API: {len(user_roles)} rôles")
+                        else:
+                            print(f"❌ Erreur API: {member_response.status_code}")
+                            # Fallback: vérifier si l'utilisateur a les permissions dans la guilde
+                            if guild.get('permissions'):
+                                # Si l'utilisateur a des permissions admin dans la guilde
+                                permissions = int(guild.get('permissions', '0'))
+                                # Permission admin = 0x8 (Administrator)
+                                if permissions & 0x8:
+                                    print("✅ Utilisateur a les permissions admin dans la guilde")
+                                    return True
+                    except Exception as e:
+                        print(f"❌ Erreur lors de la récupération des rôles: {e}")
+                
                 # Convertir les rôles en entiers pour la comparaison
-                user_role_ids = [int(role_id) for role_id in user_roles if role_id.isdigit()]
+                user_role_ids = []
+                for role_id in user_roles:
+                    try:
+                        user_role_ids.append(int(role_id))
+                    except (ValueError, TypeError):
+                        pass
+                
                 print(f"🔍 Rôles convertis: {user_role_ids}")
                 
                 # Vérifier si l'utilisateur a un des rôles admin
