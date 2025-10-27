@@ -32,6 +32,24 @@ python start.py
 ```
 Ce script démarre automatiquement le bot Discord ET le panel web d'administration.
 
+### Installation des dépendances
+
+Ce bot et son panel web nécessitent les bibliothèques suivantes :
+
+```bash
+pip install -r requirements.txt
+```
+
+Le fichier `requirements.txt` inclus couvre :
+- discord.py (bot Discord)
+- supabase (base de données)
+- python-dotenv (variables d'environnement)
+- Flask et Flask-SocketIO (panel web)
+- requests (autorisation OAuth Discord, API HTTP)
+- gunicorn (optionnel, pour déploiement production Flask)
+
+Vérifiez que toutes ces dépendances sont installées avant de démarrer !
+
 ### Option 2 : Démarrage Manuel
 
 1. **Installer les dépendances** :
