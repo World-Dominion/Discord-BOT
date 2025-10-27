@@ -18,6 +18,9 @@ BASE_URL = os.getenv('RENDER_EXTERNAL_URL') or os.getenv('WEB_PANEL_URL') or os.
 DISCORD_REDIRECT_URI = os.getenv('DISCORD_REDIRECT_URI', BASE_URL + '/callback')
 ADMIN_ROLE_IDS = [int(x) for x in os.getenv('ADMIN_ROLE_IDS', '').split(',') if x.strip()]
 
+# Logs Discord
+LOG_CHANNEL_ID = 1432369899635871894  # Canal de logs
+
 # Supabase
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
@@ -100,6 +103,28 @@ def is_user_admin():
     if 'user' not in session:
         return False
     return session['user'].get('admin', False)
+
+def send_discord_log(action, details):
+    """Envoyer un log sur Discord"""
+    try:
+        import requests
+        
+        username = session.get('user', {}).get('username', 'Inconnu')
+        user_id = session.get('user', {}).get('id', 'Inconnu')
+        
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        message = f"**🔧 {action}**\n👤 **Utilisateur:** {username} ({user_id})\n📅 **Date:** {timestamp}\n📋 **Détails:** {details}"
+        
+        payload = {
+            'content': message,
+            'username': 'Web Admin Panel'
+        }
+        
+        webhook_url = os.getenv('DISCORD_WEBHOOK_URL')
+        if webhook_url:
+            requests.post(webhook_url, json=payload)
+    except Exception as e:
+        print(f"❌ Erreur envoi log Discord: {e}")
 
 # Routes principales
 @app.route('/')
@@ -232,6 +257,32 @@ def api_countries():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/countries', methods=['POST'])
+def api_create_country():
+    """Créer un nouveau pays"""
+    if not is_user_admin():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        data = request.json
+        
+        # Créer le pays
+        result = supabase.table('countries').insert(data).execute()
+        
+        if result.data:
+            country = result.data[0]
+            send_discord_log(
+                "🌍 Création de pays",
+                f"Pays: **{country.get('name', 'Inconnu')}** (ID: {country.get('id')})"
+            )
+            return jsonify({'success': True, 'data': result.data})
+        
+        return jsonify({'error': 'Failed to create country'}), 500
+    
+    except Exception as e:
+        print(f"❌ Erreur création pays: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/countries/<country_id>', methods=['GET', 'PUT', 'DELETE'])
 def api_country(country_id):
     if not is_user_admin():
@@ -245,11 +296,32 @@ def api_country(country_id):
             return jsonify({'error': 'Country not found'}), 404
         
         elif request.method == 'PUT':
+            # Récupérer l'ancien pays pour le log
+            old_country = supabase.table('countries').select('*').eq('id', country_id).execute()
+            
             data = request.json
             result = supabase.table('countries').update(data).eq('id', country_id).execute()
-            return jsonify({'success': True, 'data': result.data})
+            
+            if result.data:
+                country = result.data[0]
+                changes = []
+                for key, value in data.items():
+                    if key in old_country.data[0]:
+                        changes.append(f"{key}: {old_country.data[0][key]} → {value}")
+                
+                send_discord_log(
+                    "✏️ Modification de pays",
+                    f"Pays: **{country.get('name')}** (ID: {country_id})\nChangements: {', '.join(changes)}"
+                )
+                
+                return jsonify({'success': True, 'data': result.data})
+            
+            return jsonify({'error': 'Failed to update country'}), 500
         
         elif request.method == 'DELETE':
+            # Récupérer les infos avant suppression
+            old_country = supabase.table('countries').select('*').eq('id', country_id).execute()
+            
             # Expulser tous les joueurs
             supabase.table('players').update({
                 'country_id': None,
@@ -258,9 +330,17 @@ def api_country(country_id):
             
             # Supprimer le pays
             result = supabase.table('countries').delete().eq('id', country_id).execute()
+            
+            if old_country.data:
+                send_discord_log(
+                    "🗑️ Suppression de pays",
+                    f"Pays: **{old_country.data[0].get('name', 'Inconnu')}** (ID: {country_id})"
+                )
+            
             return jsonify({'success': True})
     
     except Exception as e:
+        print(f"❌ Erreur API pays: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/players')
@@ -281,15 +361,44 @@ def api_player(player_id):
     
     try:
         if request.method == 'PUT':
+            # Récupérer l'ancien joueur
+            old_player = supabase.table('players').select('*').eq('id', player_id).execute()
+            
             data = request.json
             result = supabase.table('players').update(data).eq('id', player_id).execute()
-            return jsonify({'success': True, 'data': result.data})
+            
+            if result.data:
+                player = result.data[0]
+                changes = []
+                for key, value in data.items():
+                    if old_player.data and key in old_player.data[0]:
+                        changes.append(f"{key}: {old_player.data[0][key]} → {value}")
+                
+                send_discord_log(
+                    "👤 Modification de joueur",
+                    f"Joueur: **{player.get('username', 'Inconnu')}** (ID: {player_id})\nChangements: {', '.join(changes)}"
+                )
+                
+                return jsonify({'success': True, 'data': result.data})
+            
+            return jsonify({'error': 'Failed to update player'}), 500
         
         elif request.method == 'DELETE':
+            # Récupérer les infos avant suppression
+            old_player = supabase.table('players').select('*').eq('id', player_id).execute()
+            
             result = supabase.table('players').delete().eq('id', player_id).execute()
+            
+            if old_player.data:
+                send_discord_log(
+                    "🗑️ Suppression de joueur",
+                    f"Joueur: **{old_player.data[0].get('username', 'Inconnu')}** (ID: {player_id})"
+                )
+            
             return jsonify({'success': True})
     
     except Exception as e:
+        print(f"❌ Erreur API joueur: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/wars')
