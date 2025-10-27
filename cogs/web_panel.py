@@ -30,22 +30,22 @@ class WebPanelCog(commands.Cog):
             return
         
         # URL du panel web
-        web_url = os.getenv('WEB_PANEL_URL', 'http://localhost:5000')
+        web_url = os.getenv('WEB_PANEL_URL', os.getenv('HOST_IP', 'http://localhost:5000'))
         
         embed = discord.Embed(
-            title="🌍 Panel d'Administration Web",
+            title="� Panel d'Administration Web",
             description="Accédez au panel d'administration complet de World Dominion",
             color=0x5865f2
         )
         
         embed.add_field(
-            name="🔗 URL du Panel",
+            name="� URL du Panel",
             value=f"[Cliquez ici pour accéder au panel]({web_url})",
             inline=False
         )
         
         embed.add_field(
-            name="🔐 Connexion",
+            name="� Connexion",
             value="Connectez-vous avec votre compte Discord",
             inline=True
         )
@@ -57,13 +57,13 @@ class WebPanelCog(commands.Cog):
         )
         
         embed.add_field(
-            name="📊 Dashboard",
+            name="� Dashboard",
             value="Statistiques en temps réel et graphiques interactifs",
             inline=True
         )
         
         embed.add_field(
-            name="🛠️ Outils Avancés",
+            name="�️ Outils Avancés",
             value="Modification détaillée, export de données, sauvegarde",
             inline=True
         )
