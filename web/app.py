@@ -15,7 +15,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Configuration
 DISCORD_CLIENT_ID = os.getenv('DISCORD_CLIENT_ID')
 DISCORD_CLIENT_SECRET = os.getenv('DISCORD_CLIENT_SECRET')
-DISCORD_REDIRECT_URI = os.getenv('DISCORD_REDIRECT_URI', 'http://localhost:5000/callback')
+DISCORD_REDIRECT_URI = os.getenv('DISCORD_REDIRECT_URI', os.getenv('HOST_IP', 'http://localhost:5000') + '/callback')
 ADMIN_ROLE_IDS = [int(x) for x in os.getenv('ADMIN_ROLE_IDS', '').split(',') if x.strip()]
 
 # Supabase
@@ -37,22 +37,22 @@ class WebAdminManager:
             return False
         
         guild_id = str(os.getenv('DISCORD_GUILD_ID'))
-        print(f"🔍 Recherche dans la guilde: {guild_id}")
-        print(f"🔍 Rôles admin configurés: {ADMIN_ROLE_IDS}")
+        print(f"� Recherche dans la guilde: {guild_id}")
+        print(f"� Rôles admin configurés: {ADMIN_ROLE_IDS}")
         
         for guild in user_data['guilds']:
-            print(f"🔍 Guilde trouvée: {guild['id']} - {guild.get('name', 'Inconnu')}")
+            print(f"� Guilde trouvée: {guild['id']} - {guild.get('name', 'Inconnu')}")
             if guild['id'] == guild_id:
                 user_roles = guild.get('roles', [])
-                print(f"🔍 Rôles de l'utilisateur: {user_roles}")
+                print(f"� Rôles de l'utilisateur: {user_roles}")
                 
                 # Convertir les rôles en entiers pour la comparaison
                 user_role_ids = [int(role_id) for role_id in user_roles if role_id.isdigit()]
-                print(f"🔍 Rôles convertis: {user_role_ids}")
+                print(f"� Rôles convertis: {user_role_ids}")
                 
                 # Vérifier si l'utilisateur a un des rôles admin
                 has_admin_role = any(role_id in ADMIN_ROLE_IDS for role_id in user_role_ids)
-                print(f"🔍 A un rôle admin: {has_admin_role}")
+                print(f"� A un rôle admin: {has_admin_role}")
                 
                 if has_admin_role:
                     return True
