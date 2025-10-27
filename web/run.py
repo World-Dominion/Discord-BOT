@@ -60,13 +60,3 @@ print()
 
 # Importer et démarrer l'application
 
-if __name__ == '__main__':
-    try:
-        from app import app, socketio
-        port = int(os.environ.get('PORT', 10000))
-        socketio.run(app, debug=False, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
-    except KeyboardInterrupt:
-        print("\n🛑 Arrêt du serveur...")
-    except Exception as e:
-        print(f"\n❌ Erreur lors du démarrage : {e}")
-        sys.exit(1)
