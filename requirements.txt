@@ -1,4 +1,7 @@
 discord.py==2.3.2
 supabase==2.0.0
 python-dotenv==1.0.0
-asyncio
+Flask>=2.2.0
+Flask-SocketIO>=5.3.0
+requests>=2.28.0
+gunicorn>=21.2.0
