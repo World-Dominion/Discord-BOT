@@ -1,8 +1,7 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_socketio import SocketIO, emit
 import os
-import asyncio
-import discord
+# imports supprimés - non utilisés
 from supabase import create_client, Client
 import json
 from datetime import datetime
