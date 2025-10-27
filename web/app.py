@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_socketio import SocketIO, emit
+from app import socketio, app
 import os
 from supabase import create_client, Client
 import json
@@ -729,6 +730,7 @@ def handle_update_request():
     except Exception as e:
         emit('error', {'message': str(e)})
 
-if __name__ == '__main__':
+# Démarrage du serveur
+if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
     socketio.run(app, debug=False, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
