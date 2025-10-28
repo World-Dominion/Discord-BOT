@@ -27,7 +27,7 @@ def check_env():
 
 def start_web():
     # Démarre le panel web (import absolu pour les analyseurs statiques)
-    from web.run import socketio, app  
+    from web.app import socketio, app
     port = int(os.environ.get('PORT', 5000))
     socketio.run(app, debug=False, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
 
