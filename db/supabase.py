@@ -22,7 +22,8 @@ class DatabaseManager:
                 'discord_id': discord_id,
                 'username': username,
                 'role': 'recruit',
-                'balance': 0
+                'balance': 0,
+                'inventory': []
             }).execute()
             return result.data[0] if result.data else None
         except Exception as e:

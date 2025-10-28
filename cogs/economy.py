@@ -384,7 +384,7 @@ class EconomyCog(commands.Cog):
         # Statistiques économiques
         embed.add_field(
             name="📊 Économie",
-            value=f"{country.get('economy', 0)}/100",
+            value=f"{country.get('executive', 0)}/100",
             inline=True
         )
         embed.add_field(
@@ -397,6 +397,19 @@ class EconomyCog(commands.Cog):
             value=f"{country.get('stability', 0)}%",
             inline=True
         )
+        
+        # NOUVEAU : Analyse IA
+        try:
+            from utils.ai_helper_gemini import generate_economic_analysis
+            ai_analysis = generate_economic_analysis(country)
+            
+            embed.add_field(
+                name="🤖 Analyse IA",
+                value=ai_analysis[:500] + "..." if len(ai_analysis) > 500 else ai_analysis,
+                inline=False
+            )
+        except Exception as e:
+            print(f"Erreur génération analyse IA: {e}")
         
         await interaction.response.send_message(embed=embed)
     

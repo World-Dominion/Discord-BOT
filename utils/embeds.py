@@ -86,6 +86,22 @@ class GameEmbeds:
             inline=True
         )
         
+        # NOUVEAU : Inventaire
+        inventory = player.get('inventory', [])
+        if inventory and len(inventory) > 0:
+            inv_text = ""
+            for item in inventory[:5]:
+                item_name = item if isinstance(item, str) else item.get('name', 'Objet')
+                inv_text += f"• {item_name}\n"
+            if len(inventory) > 5:
+                inv_text += f"... et {len(inventory) - 5} autres"
+            
+            embed.add_field(
+                name="🎒 Inventaire",
+                value=inv_text or "Aucun objet",
+                inline=False
+            )
+        
         return embed
     
     @staticmethod
