@@ -7,17 +7,39 @@
   --danger: #ef4444;
   --warning: #f59e0b;
   --success: #10b981;
+  --border: #222733;
+  --panel-2: #1b2030;
 }
 
 html, body { background: var(--bg); color: var(--text); }
+main { padding: 16px; }
 .bg-sidebar { background: #141720; border-right: 1px solid #222733; }
 .nav-link { color: var(--muted); border-radius: 6px; margin: 2px 8px; }
 .nav-link.active, .nav-link:hover { background: rgba(88,101,242,.15); color: var(--text); }
-.card { background: var(--panel); border: 1px solid #222733; }
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
+.card-header { background: var(--panel-2); border-bottom: 1px solid var(--border); color: var(--text); }
 .table { color: var(--text); }
 .table thead th { color: var(--muted); font-weight: 600; }
+.table-striped>tbody>tr:nth-of-type(odd) { --bs-table-accent-bg: rgba(255,255,255,0.02); color: var(--text); }
+.table-hover tbody tr:hover { background: rgba(255,255,255,0.04); }
 .badge { font-weight: 600; }
+.badge.bg-success { background-color: #16a34a !important; }
+.badge.bg-danger { background-color: #dc2626 !important; }
+.badge.bg-info { background-color: #0ea5e9 !important; }
+.badge.bg-warning { background-color: #f59e0b !important; color: #111827; }
 .btn-outline-primary { border-color: var(--primary); color: var(--primary); }
 .btn-outline-primary:hover { background: var(--primary); color: #fff; }
 #status-badge { font-weight: 600; }
+
+/* Layout corrections */
+.section { display: none; }
+#dashboard.section { display: block; }
+.sidebar-sticky { position: sticky; top: 0; height: 100vh; }
+.content-wrapper { max-width: 1600px; margin: 0 auto; }
+
+/* Tables long contenu */
+td small { color: var(--muted); }
+
+/* Charts on dark */
+canvas { background: transparent; }
 

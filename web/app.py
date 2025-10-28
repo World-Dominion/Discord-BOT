@@ -8,7 +8,12 @@ import secrets
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('WEB_SECRET_KEY', secrets.token_hex(32))
-socketio = SocketIO(app, cors_allowed_origins="*")
+# Utiliser threading pour éviter l'erreur Werkzeug en prod (Render) et permettre le fallback polling
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode=os.getenv('SOCKETIO_ASYNC_MODE', 'threading'),
+)
 
 # Configuration
 discord_client_id = os.getenv('DISCORD_CLIENT_ID')
@@ -483,6 +488,11 @@ def api_trigger_event():
                     'created_at': datetime.now().isoformat()
                 }
         
+        # Validation minimale
+        if not isinstance(data, dict) or 'type' not in data:
+            return jsonify({'error': 'Invalid payload'}), 400
+
+        # Insérer
         result = supabase.table('events').insert(data).execute()
         
         if result.data:
@@ -493,7 +503,9 @@ def api_trigger_event():
         return jsonify({'error': 'Failed to trigger event'}), 500
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        # Log verbeux côté serveur
+        print(f"Erreur /api/events/trigger: {e}")
+        return jsonify({'error': 'Failed to trigger event', 'details': str(e)}), 500
 
 # API Routes - Transactions (audit économique)
 @app.route('/api/transactions')

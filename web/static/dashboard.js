@@ -26,6 +26,8 @@ socket.on('disconnect', (reason) => {
 socket.on('connect_error', (error) => {
   console.error('❌ Erreur connexion Socket.IO:', error);
   setStatus('Erreur de connexion');
+  // Fallback: tente de charger via REST
+  restBootstrap();
 });
 
 socket.on('reconnect', (attemptNumber) => {
@@ -42,6 +44,7 @@ socket.on('reconnect_error', (error) => {
 socket.on('reconnect_failed', () => {
   console.error('❌ Échec reconnexion Socket.IO');
   setStatus('Connexion échouée');
+  restBootstrap();
 });
 
 socket.on('data_update', (data) => {
@@ -76,6 +79,34 @@ function requestUpdate(){
   console.log('🔄 Demande de mise à jour des données');
   socket.emit('request_update'); 
 }
+
+// Fallback REST si Socket.IO indisponible
+function restBootstrap(){
+  Promise.all([
+    fetch('/api/countries').then(r=>r.json()).catch(()=>[]),
+    fetch('/api/players').then(r=>r.json()).catch(()=>[]),
+    fetch('/api/wars').then(r=>r.json()).catch(()=>[]),
+    fetch('/api/events').then(r=>r.json()).catch(()=>[]),
+  ]).then(([countries, players, wars, events])=>{
+    currentData = {
+      countries: Array.isArray(countries)?countries:(countries.data||[]),
+      players: Array.isArray(players)?players:(players.data||[]),
+      wars: Array.isArray(wars)?wars:(wars.data||[]),
+      events: Array.isArray(events)?events:(events.data||[]),
+    };
+    updateDashboard();
+  }).catch(()=>{
+    showAlert('danger','Impossible de charger les données (fallback).');
+  });
+}
+
+// Timeout: si aucune data reçue après 3s, fallback REST
+setTimeout(()=>{
+  if (!currentData || (!currentData.countries?.length && !currentData.players?.length)){
+    console.warn('⏱️ Aucun data reçu via Socket.IO, activation du fallback REST');
+    restBootstrap();
+  }
+}, 3000);
 
 // Navigation latérale
 document.addEventListener('click', (e)=>{
