@@ -307,9 +307,12 @@
                     <button class="btn btn-info w-100" onclick="backupDatabase()">
                         <i class="fas fa-save"></i> Sauvegarder la Base de Données
                     </button>
+<<<<<<< HEAD
                     <button class="btn btn-secondary w-100 mt-2" onclick="openGiveModal()">
                         <i class="fas fa-gift"></i> Donner (Admin)
                     </button>
+=======
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
                 </div>
             </div>
         </div>
@@ -354,6 +357,7 @@
     </div>
 </div>
 
+<<<<<<< HEAD
 <!-- Transactions Audit -->
 <div id="transactions" class="section" style="display: none;">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -398,6 +402,8 @@
     </div>
     
 </div>
+=======
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
 <!-- Modals -->
 <!-- Create Country Modal -->
 <div class="modal fade" id="createCountryModal" tabindex="-1">
@@ -529,4 +535,514 @@
 </div>
 {% endblock %}
 
+<<<<<<< HEAD
 {% block extra_js %}{% endblock %}
+=======
+{% block extra_js %}
+<script>
+let rolesChart, economyChart, statisticsChart;
+
+function updateDashboard() {
+    if (!currentData.countries || !currentData.players) return;
+    
+    // Update statistics
+    document.getElementById('countries-count').textContent = currentData.countries.length;
+    document.getElementById('players-count').textContent = currentData.players.length;
+    document.getElementById('wars-count').textContent = currentData.wars ? currentData.wars.filter(w => !w.ended_at).length : 0;
+    
+    const totalEconomy = currentData.countries.reduce((sum, country) => sum + (country.economy || 0), 0);
+    document.getElementById('total-economy').textContent = formatNumber(totalEconomy);
+    
+    // Update charts
+    updateRolesChart();
+    updateEconomyChart();
+    updateTables();
+    updateRecentActivity();
+    updateAlerts();
+}
+
+function updateRolesChart() {
+    if (!currentData.players) return;
+    
+    const roleCounts = {};
+    currentData.players.forEach(player => {
+        const role = player.role || 'recruit';
+        roleCounts[role] = (roleCounts[role] || 0) + 1;
+    });
+    
+    const ctx = document.getElementById('rolesChart').getContext('2d');
+    if (rolesChart) rolesChart.destroy();
+    
+    rolesChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(roleCounts),
+            datasets: [{
+                data: Object.values(roleCounts),
+                backgroundColor: [
+                    '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#ffffff'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateEconomyChart() {
+    if (!currentData.countries) return;
+    
+    const topCountries = currentData.countries
+        .sort((a, b) => (b.economy || 0) - (a.economy || 0))
+        .slice(0, 5);
+    
+    const ctx = document.getElementById('economyChart').getContext('2d');
+    if (economyChart) economyChart.destroy();
+    
+    economyChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: topCountries.map(c => c.name),
+            datasets: [{
+                label: 'Économie',
+                data: topCountries.map(c => c.economy || 0),
+                backgroundColor: '#5865f2'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#ffffff'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        color: '#ffffff'
+                    },
+                    grid: {
+                        color: '#40444b'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#ffffff'
+                    },
+                    grid: {
+                        color: '#40444b'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateTables() {
+    updateCountriesTable();
+    updatePlayersTable();
+    updateWarsTable();
+    updateEventsTable();
+}
+
+function updateCountriesTable() {
+    const tbody = document.getElementById('countries-table');
+    if (!currentData.countries) return;
+    
+    tbody.innerHTML = currentData.countries.map(country => {
+        const resources = country.resources || {};
+        const leader = currentData.players ? currentData.players.find(p => p.id === country.leader_id) : null;
+        
+        return `
+            <tr>
+                <td><strong>${country.name}</strong></td>
+                <td>${leader ? leader.username : 'Aucun'}</td>
+                <td>${formatNumber(country.population || 0)}</td>
+                <td><span class="badge bg-success">${country.economy || 0}/100</span></td>
+                <td><span class="badge bg-danger">${country.army_strength || 0}/100</span></td>
+                <td><span class="badge bg-info">${country.stability || 0}%</span></td>
+                <td>
+                    <span class="badge ${country.is_locked ? 'bg-warning' : 'bg-success'}">
+                        ${country.is_locked ? 'Verrouillé' : 'Ouvert'}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editCountry('${country.id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCountry('${country.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updatePlayersTable() {
+    const tbody = document.getElementById('players-table');
+    if (!currentData.players) return;
+    
+    tbody.innerHTML = currentData.players.map(player => {
+        const country = currentData.countries ? currentData.countries.find(c => c.id === player.country_id) : null;
+        
+        return `
+            <tr>
+                <td><strong>${player.username}</strong></td>
+                <td>${country ? country.name : 'Aucun pays'}</td>
+                <td><span class="badge bg-primary">${player.role || 'recruit'}</span></td>
+                <td>${formatNumber(player.balance || 0)} 💵</td>
+                <td>${formatDate(player.joined_at)}</td>
+                <td>
+                    <button class="btn btn-sm btn-warning" onclick="editPlayer('${player.id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updateWarsTable() {
+    const tbody = document.getElementById('wars-table');
+    if (!currentData.wars) return;
+    
+    tbody.innerHTML = currentData.wars.map(war => {
+        const attacker = currentData.countries ? currentData.countries.find(c => c.id === war.attacker_id) : null;
+        const defender = currentData.countries ? currentData.countries.find(c => c.id === war.defender_id) : null;
+        const status = war.ended_at ? 'Terminée' : 'Active';
+        const statusClass = war.ended_at ? 'bg-secondary' : 'bg-danger';
+        
+        return `
+            <tr>
+                <td>${attacker ? attacker.name : 'Inconnu'}</td>
+                <td>${defender ? defender.name : 'Inconnu'}</td>
+                <td>${formatDate(war.started_at)}</td>
+                <td><span class="badge ${statusClass}">${status}</span></td>
+                <td>
+                    ${!war.ended_at ? `
+                        <button class="btn btn-sm btn-warning" onclick="endWar('${war.id}')">
+                            <i class="fas fa-stop"></i>
+                        </button>
+                    ` : ''}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updateEventsTable() {
+    const tbody = document.getElementById('events-table');
+    if (!currentData.events) return;
+    
+    tbody.innerHTML = currentData.events.map(event => {
+        const country = currentData.countries ? currentData.countries.find(c => c.id === event.target_country) : null;
+        const impact = event.impact ? JSON.stringify(event.impact) : 'Aucun';
+        
+        return `
+            <tr>
+                <td><span class="badge bg-warning">${event.type}</span></td>
+                <td>${event.description}</td>
+                <td>${country ? country.name : 'Inconnu'}</td>
+                <td>${formatDate(event.created_at)}</td>
+                <td><small>${impact}</small></td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updateRecentActivity() {
+    const container = document.getElementById('recent-activity');
+    // Simuler l'activité récente
+    container.innerHTML = `
+        <div class="d-flex align-items-center mb-2">
+            <i class="fas fa-user-plus text-success me-2"></i>
+            <small>Nouveau joueur rejoint</small>
+        </div>
+        <div class="d-flex align-items-center mb-2">
+            <i class="fas fa-sword text-danger me-2"></i>
+            <small>Guerre déclarée</small>
+        </div>
+        <div class="d-flex align-items-center mb-2">
+            <i class="fas fa-coins text-warning me-2"></i>
+            <small>Commerce effectué</small>
+        </div>
+    `;
+}
+
+function updateAlerts() {
+    const container = document.getElementById('alerts');
+    const alerts = [];
+    
+    // Vérifier les pays avec une stabilité faible
+    if (currentData.countries) {
+        const lowStability = currentData.countries.filter(c => c.stability < 30);
+        if (lowStability.length > 0) {
+            alerts.push({
+                type: 'warning',
+                message: `${lowStability.length} pays avec une stabilité faible`
+            });
+        }
+    }
+    
+    // Vérifier les guerres actives
+    if (currentData.wars) {
+        const activeWars = currentData.wars.filter(w => !w.ended_at);
+        if (activeWars.length > 5) {
+            alerts.push({
+                type: 'danger',
+                message: `${activeWars.length} guerres actives`
+            });
+        }
+    }
+    
+    if (alerts.length === 0) {
+        container.innerHTML = '<div class="text-success"><i class="fas fa-check-circle"></i> Aucune alerte</div>';
+    } else {
+        container.innerHTML = alerts.map(alert => `
+            <div class="alert alert-${alert.type} alert-sm">
+                <i class="fas fa-exclamation-triangle"></i> ${alert.message}
+            </div>
+        `).join('');
+    }
+}
+
+// Modal functions
+function showCreateCountryModal() {
+    const modal = new bootstrap.Modal(document.getElementById('createCountryModal'));
+    modal.show();
+}
+
+function createCountry() {
+    const name = document.getElementById('countryName').value;
+    const population = parseInt(document.getElementById('countryPopulation').value);
+    const economy = parseInt(document.getElementById('countryEconomy').value);
+    
+    if (!name) {
+        showAlert('danger', 'Le nom du pays est requis');
+        return;
+    }
+    
+    fetch('/api/countries', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            name: name,
+            population: population,
+            economy: economy,
+            army_strength: 20,
+            stability: 80,
+            resources: {
+                money: 5000,
+                food: 200,
+                metal: 50,
+                oil: 80,
+                energy: 100,
+                materials: 30
+            },
+            is_locked: false
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Pays créé avec succès');
+            bootstrap.Modal.getInstance(document.getElementById('createCountryModal')).hide();
+            requestUpdate();
+        } else {
+            showAlert('danger', data.error || 'Erreur lors de la création');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erreur de connexion');
+    });
+}
+
+function editCountry(countryId) {
+    const country = currentData.countries.find(c => c.id === countryId);
+    if (!country) return;
+    
+    // Remplir le formulaire
+    document.getElementById('editCountryId').value = country.id;
+    document.getElementById('editCountryName').value = country.name;
+    document.getElementById('editCountryPopulation').value = country.population || 0;
+    document.getElementById('editCountryEconomy').value = country.economy || 0;
+    document.getElementById('editCountryArmy').value = country.army_strength || 0;
+    document.getElementById('editCountryStability').value = country.stability || 0;
+    document.getElementById('editCountryLocked').checked = country.is_locked || false;
+    
+    const resources = country.resources || {};
+    document.getElementById('editCountryMoney').value = resources.money || 0;
+    document.getElementById('editCountryFood').value = resources.food || 0;
+    document.getElementById('editCountryMetal').value = resources.metal || 0;
+    document.getElementById('editCountryOil').value = resources.oil || 0;
+    document.getElementById('editCountryEnergy').value = resources.energy || 0;
+    document.getElementById('editCountryMaterials').value = resources.materials || 0;
+    
+    const modal = new bootstrap.Modal(document.getElementById('editCountryModal'));
+    modal.show();
+}
+
+function saveCountry() {
+    const countryId = document.getElementById('editCountryId').value;
+    const data = {
+        name: document.getElementById('editCountryName').value,
+        population: parseInt(document.getElementById('editCountryPopulation').value),
+        economy: parseInt(document.getElementById('editCountryEconomy').value),
+        army_strength: parseInt(document.getElementById('editCountryArmy').value),
+        stability: parseInt(document.getElementById('editCountryStability').value),
+        is_locked: document.getElementById('editCountryLocked').checked,
+        resources: {
+            money: parseInt(document.getElementById('editCountryMoney').value),
+            food: parseInt(document.getElementById('editCountryFood').value),
+            metal: parseInt(document.getElementById('editCountryMetal').value),
+            oil: parseInt(document.getElementById('editCountryOil').value),
+            energy: parseInt(document.getElementById('editCountryEnergy').value),
+            materials: parseInt(document.getElementById('editCountryMaterials').value)
+        }
+    };
+    
+    fetch(`/api/countries/${countryId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Pays modifié avec succès');
+            bootstrap.Modal.getInstance(document.getElementById('editCountryModal')).hide();
+            requestUpdate();
+        } else {
+            showAlert('danger', data.error || 'Erreur lors de la modification');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erreur de connexion');
+    });
+}
+
+function deleteCountry(countryId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce pays ? Cette action est irréversible.')) {
+        return;
+    }
+    
+    fetch(`/api/countries/${countryId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Pays supprimé avec succès');
+            requestUpdate();
+        } else {
+            showAlert('danger', data.error || 'Erreur lors de la suppression');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erreur de connexion');
+    });
+}
+
+// Tool functions
+function resetAllResources() {
+    if (!confirm('Réinitialiser toutes les ressources ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function resetAllStats() {
+    if (!confirm('Réinitialiser toutes les statistiques ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function backupDatabase() {
+    showAlert('info', 'Sauvegarde en cours...');
+    
+    fetch('/api/backup')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Sauvegarde terminée');
+        } else {
+            showAlert('danger', 'Erreur lors de la sauvegarde');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erreur de connexion');
+    });
+}
+
+function endAllWars() {
+    if (!confirm('Terminer toutes les guerres actives ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function triggerRandomEvent() {
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function generateReport() {
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function exportPlayers() {
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function promoteAllCitizens() {
+    if (!confirm('Promouvoir tous les citoyens ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function giveAllMoney() {
+    if (!confirm('Donner de l\'argent à tous les joueurs ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function resetAllPlayers() {
+    if (!confirm('Réinitialiser tous les joueurs ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function showConfigModal() {
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function viewLogs() {
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function restartBot() {
+    if (!confirm('Redémarrer le bot ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    showLoading(false);
+    requestUpdate();
+});
+</script>
+{% endblock %}
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6

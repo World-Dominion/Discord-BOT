@@ -495,6 +495,7 @@ def api_trigger_event():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+<<<<<<< HEAD
 # API Routes - Transactions (audit économique)
 @app.route('/api/transactions')
 def api_transactions():
@@ -525,6 +526,8 @@ def api_transactions():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+=======
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
 # API Routes - Statistics
 @app.route('/api/statistics')
 def api_statistics():
@@ -636,6 +639,7 @@ def api_backup():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+<<<<<<< HEAD
 @app.route('/api/tools/give', methods=['POST'])
 def api_give():
     """Donner une ressource/argent à un joueur/pays ou à tous (admin requis).
@@ -715,6 +719,8 @@ def api_give():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+=======
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
 @app.route('/api/tools/promote-citizens', methods=['POST'])
 def api_promote_citizens():
     if not is_user_admin():

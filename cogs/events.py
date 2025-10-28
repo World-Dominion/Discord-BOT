@@ -13,7 +13,13 @@ class EventsCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.event_task = None
+<<<<<<< HEAD
         # Démarrer la boucle d'événements à l'init du cog
+=======
+    
+    async def setup_hook(self):
+        """Démarrer le système d'événements"""
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
         self.event_task = asyncio.create_task(self.event_loop())
         logger.info("Système d'événements démarré")
     
@@ -32,8 +38,11 @@ class EventsCog(commands.Cog):
                 
                 # Déclencher un événement aléatoire
                 await self.trigger_random_event()
+<<<<<<< HEAD
                 # Appliquer le tick économique
                 await self.apply_economic_tick()
+=======
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
                 
             except asyncio.CancelledError:
                 break
@@ -251,6 +260,7 @@ class EventsCog(commands.Cog):
         
         await interaction.response.send_message(embed=embed)
 
+<<<<<<< HEAD
     async def apply_economic_tick(self):
         """Tick économique périodique: inflation, intérêts, maintenance armée"""
         try:
@@ -292,5 +302,7 @@ class EventsCog(commands.Cog):
         except Exception as e:
             logger.error(f"Erreur tick économique: {e}")
 
+=======
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
 async def setup(bot):
     await bot.add_cog(EventsCog(bot))

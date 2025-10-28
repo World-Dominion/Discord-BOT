@@ -4,7 +4,10 @@ from discord import app_commands
 from db.supabase import db
 from utils.embeds import GameEmbeds
 from config import ADMIN_ROLE_IDS
+<<<<<<< HEAD
 from utils.helpers import GameHelpers
+=======
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
 import asyncio
 
 class AdminCog(commands.Cog):
@@ -13,11 +16,16 @@ class AdminCog(commands.Cog):
     
     def is_admin(self, interaction: discord.Interaction) -> bool:
         """Vérifier si l'utilisateur est admin"""
+<<<<<<< HEAD
         # Vérifier les rôles admin (Discord roles ou rôle jeu Fondateur/Haut Conseil)
+=======
+        # Vérifier les rôles admin
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
         if interaction.guild and ADMIN_ROLE_IDS:
             user_roles = [role.id for role in interaction.user.roles]
             if any(role_id in ADMIN_ROLE_IDS for role_id in user_roles):
                 return True
+<<<<<<< HEAD
         # Vérifier rôle jeu
         # Utilisateur doit exister en base et avoir un rôle élevé
         # (Fondateur ou Haut Conseil autorisé à agir comme admin)
@@ -110,6 +118,10 @@ class AdminCog(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except Exception as e:
             await interaction.response.send_message(embed=GameEmbeds.error_embed("Erreur lors du don."), ephemeral=True)
+=======
+        
+        return False
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
     
     @app_commands.command(name="create", description="Créer un nouveau pays (Admin seulement)")
     @app_commands.describe(country_name="Nom du pays à créer")

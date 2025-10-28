@@ -15,6 +15,7 @@ class GameHelpers:
             'materials': 5   # 5 énergie = 1 matériau
         }
         return costs.get(resource, 1) * amount
+<<<<<<< HEAD
 
     @staticmethod
     def apply_trade_fee(amount: int, fee_percent: int) -> int:
@@ -22,6 +23,8 @@ class GameHelpers:
         if fee_percent <= 0:
             return 0
         return max(1, int(abs(amount) * fee_percent / 100))
+=======
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
     
     @staticmethod
     def calculate_war_result(attacker: Dict[str, Any], defender: Dict[str, Any]) -> Dict[str, Any]:
@@ -90,20 +93,27 @@ class GameHelpers:
     def can_player_use_command(player_role: str, command_type: str) -> bool:
         """Vérifier si un joueur peut utiliser une commande selon son rang"""
         role_levels = {
+<<<<<<< HEAD
             'founder': 0,
             'high_council': 1,
+=======
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
             'chief': 1,
             'vice_chief': 2,
             'economy_minister': 3,
             'defense_minister': 4,
             'governor': 5,
             'officer': 6,
+<<<<<<< HEAD
             'soldier': 7,
+=======
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
             'citizen': 7,
             'recruit': 8
         }
         
         command_requirements = {
+<<<<<<< HEAD
             'budget': 1,      # Chef d'État / Haut Conseil / Fondateur
             'promote': 1,
             'tax': 1,
@@ -123,6 +133,26 @@ class GameHelpers:
             'vote': 7,
             'join': 8,
             'give': 0         # Fondateur seulement (ou admin panel)
+=======
+            'budget': 1,      # Chef d'État seulement
+            'promote': 1,     # Chef d'État seulement
+            'tax': 1,         # Chef d'État seulement
+            'war': 1,         # Chef d'État seulement
+            'commerce': 2,    # Vice-Chef et plus
+            'election': 2,    # Vice-Chef et plus
+            'produce': 3,     # Ministre Économie et plus
+            'bank': 3,        # Ministre Économie et plus
+            'army': 4,        # Ministre Défense et plus
+            'attack': 4,      # Ministre Défense et plus
+            'spy': 4,         # Ministre Défense et plus
+            'recruit': 5,     # Gouverneur et plus
+            'infra': 5,       # Gouverneur et plus
+            'train': 6,       # Officier et plus
+            'defend': 6,      # Officier et plus
+            'work': 7,        # Citoyen et plus
+            'vote': 7,        # Citoyen et plus
+            'join': 8         # Tous
+>>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
         }
         
         player_level = role_levels.get(player_role, 8)
