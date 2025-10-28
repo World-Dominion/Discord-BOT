@@ -118,6 +118,10 @@ BASE_URL = os.getenv('RENDER_EXTERNAL_URL') or os.getenv('WEB_PANEL_URL') or os.
 DISCORD_REDIRECT_URI = os.getenv('DISCORD_REDIRECT_URI', BASE_URL + '/callback')
 ADMIN_ROLE_IDS = [int(x) for x in os.getenv('ADMIN_ROLE_IDS', '').split(',') if x.strip()]
 
+# Supabase avec vérification d'initialisation complète
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+
 # Validation des variables d'environnement critiques
 def validate_environment():
     """Valide les variables d'environnement critiques"""
@@ -168,9 +172,7 @@ if not validate_environment():
 
 LOG_CHANNEL_ID = 1432369899635871894
 
-# Supabase avec vérification d'initialisation complète
-SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+
 supabase: Client = None
 
 def initialize_database():
