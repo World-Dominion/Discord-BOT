@@ -293,7 +293,7 @@ def calculate_war_damages(attacker_country: Dict[str, Any], defender_country: Di
 ## CALCUL DE DÉGÂTS DE GUERRE
 
 Attaquant : {attacker_country.get('name')} (Force: {attacker_country.get('army_strength', 0)}/100, Éco: {attacker_country.get('economy', 0)}/100)
-Défenseur : {defender_country.get('name')} (Force: {defender_country.get('army_strength', 0)}/100, Éco: {defender_count存在ry.get('economy', 0)}/100)
+Défenseur : {defender_country.get('name')} (Force: {defender_country.get('army_strength', 0)}/100, Éco: {defender_country.get('economy', 0)}/100)
 
 Calcule les dégâts de l'attaque de missiles. Format JSON :
 {{
