@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: world-dominion
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python start.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+    healthCheckPath: /healthz
+    autoDeploy: true
+

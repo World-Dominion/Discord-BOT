@@ -1,0 +1,1030 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - World Dominion Admin{% endblock %}
+
+{% block content %}
+<!-- Dashboard Overview -->
+<div id="dashboard" class="section">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+        <button class="btn btn-primary" onclick="requestUpdate()">
+            <i class="fas fa-sync-alt"></i> Actualiser
+        </button>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-flag fa-2x mb-2"></i>
+                    <div class="stat-number" id="countries-count">-</div>
+                    <div>Pays</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <div class="stat-number" id="players-count">-</div>
+                    <div>Joueurs</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-sword fa-2x mb-2"></i>
+                    <div class="stat-number" id="wars-count">-</div>
+                    <div>Guerres Actives</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-2x mb-2"></i>
+                    <div class="stat-number" id="total-economy">-</div>
+                    <div>Économie Totale</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-pie"></i> Répartition des Rôles</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="rolesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar"></i> Top 5 Économies</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="economyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-clock"></i> Activité Récente</h5>
+                </div>
+                <div class="card-body">
+                    <div id="recent-activity">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> Chargement...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Alertes</h5>
+                </div>
+                <div class="card-body">
+                    <div id="alerts">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> Chargement...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Countries Management -->
+<div id="countries" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-flag"></i> Gestion des Pays</h1>
+        <button class="btn btn-success" onclick="showCreateCountryModal()">
+            <i class="fas fa-plus"></i> Créer un Pays
+        </button>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Leader</th>
+                            <th>Population</th>
+                            <th>Économie</th>
+                            <th>Armée</th>
+                            <th>Stabilité</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="countries-table">
+                        <tr>
+                            <td colspan="8" class="text-center">
+                                <i class="fas fa-spinner fa-spin"></i> Chargement...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Players Management -->
+<div id="players" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-users"></i> Gestion des Joueurs</h1>
+        <div>
+            <button class="btn btn-primary" onclick="exportPlayers()">
+                <i class="fas fa-download"></i> Exporter
+            </button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nom d'utilisateur</th>
+                            <th>Pays</th>
+                            <th>Rôle</th>
+                            <th>Argent</th>
+                            <th>Rejoint le</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="players-table">
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <i class="fas fa-spinner fa-spin"></i> Chargement...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Wars Management -->
+<div id="wars" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-sword"></i> Gestion des Guerres</h1>
+        <button class="btn btn-danger" onclick="endAllWars()">
+            <i class="fas fa-stop"></i> Terminer Toutes les Guerres
+        </button>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Attaquant</th>
+                            <th>Défenseur</th>
+                            <th>Début</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wars-table">
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <i class="fas fa-spinner fa-spin"></i> Chargement...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Events Management -->
+<div id="events" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-calendar-alt"></i> Gestion des Événements</h1>
+        <button class="btn btn-warning" onclick="triggerRandomEvent()">
+            <i class="fas fa-bolt"></i> Déclencher un Événement
+        </button>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Pays Cible</th>
+                            <th>Date</th>
+                            <th>Impact</th>
+                        </tr>
+                    </thead>
+                    <tbody id="events-table">
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <i class="fas fa-spinner fa-spin"></i> Chargement...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div id="statistics" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-chart-bar"></i> Statistiques Détaillées</h1>
+        <button class="btn btn-primary" onclick="generateReport()">
+            <i class="fas fa-file-pdf"></i> Générer Rapport
+        </button>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> Évolution des Statistiques</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="statisticsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tools -->
+<div id="tools" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-tools"></i> Outils d'Administration</h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-database"></i> Base de Données</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-warning w-100 mb-2" onclick="resetAllResources()">
+                        <i class="fas fa-undo"></i> Réinitialiser Toutes les Ressources
+                    </button>
+                    <button class="btn btn-danger w-100 mb-2" onclick="resetAllStats()">
+                        <i class="fas fa-chart-line"></i> Réinitialiser Toutes les Statistiques
+                    </button>
+                    <button class="btn btn-info w-100" onclick="backupDatabase()">
+                        <i class="fas fa-save"></i> Sauvegarder la Base de Données
+                    </button>
+                    <button class="btn btn-secondary w-100 mt-2" onclick="openGiveModal()">
+                        <i class="fas fa-gift"></i> Donner (Admin)
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-users-cog"></i> Gestion des Joueurs</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary w-100 mb-2" onclick="promoteAllCitizens()">
+                        <i class="fas fa-arrow-up"></i> Promouvoir Tous les Citoyens
+                    </button>
+                    <button class="btn btn-success w-100 mb-2" onclick="giveAllMoney()">
+                        <i class="fas fa-coins"></i> Donner de l'Argent à Tous
+                    </button>
+                    <button class="btn btn-warning w-100" onclick="resetAllPlayers()">
+                        <i class="fas fa-user-times"></i> Réinitialiser Tous les Joueurs
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-cog"></i> Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-info w-100 mb-2" onclick="showConfigModal()">
+                        <i class="fas fa-cog"></i> Configuration du Jeu
+                    </button>
+                    <button class="btn btn-secondary w-100 mb-2" onclick="viewLogs()">
+                        <i class="fas fa-file-alt"></i> Voir les Logs
+                    </button>
+                    <button class="btn btn-dark w-100" onclick="restartBot()">
+                        <i class="fas fa-power-off"></i> Redémarrer le Bot
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transactions Audit -->
+<div id="transactions" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-list"></i> Transactions</h1>
+        <div class="d-flex gap-2">
+            <select id="txType" class="form-select form-select-sm">
+                <option value="">Tous</option>
+                <option value="work">Travail</option>
+                <option value="produce">Production</option>
+                <option value="trade">Commerce</option>
+                <option value="tick">Tick</option>
+            </select>
+            <input id="txCountry" class="form-control form-control-sm" placeholder="country_id">
+            <input id="txPlayer" class="form-control form-control-sm" placeholder="player_id">
+            <button class="btn btn-primary btn-sm" onclick="loadTransactions()"><i class="fas fa-search"></i> Filtrer</button>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Pays</th>
+                            <th>Joueur</th>
+                            <th>Détails</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-table">
+                        <tr>
+                            <td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> Chargement...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="mt-2 text-end">
+        <button class="btn btn-secondary btn-sm" onclick="exportTransactions()"><i class="fas fa-download"></i> Exporter</button>
+    </div>
+    
+</div>
+<!-- Modals -->
+<!-- Create Country Modal -->
+<div class="modal fade" id="createCountryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Créer un Nouveau Pays</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createCountryForm">
+                    <div class="mb-3">
+                        <label for="countryName" class="form-label">Nom du Pays</label>
+                        <input type="text" class="form-control" id="countryName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="countryPopulation" class="form-label">Population Initiale</label>
+                        <input type="number" class="form-control" id="countryPopulation" value="1000000">
+                    </div>
+                    <div class="mb-3">
+                        <label for="countryEconomy" class="form-label">Économie Initiale</label>
+                        <input type="number" class="form-control" id="countryEconomy" value="50" min="0" max="100">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" onclick="createCountry()">Créer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Country Modal -->
+<div class="modal fade" id="editCountryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modifier le Pays</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCountryForm">
+                    <input type="hidden" id="editCountryId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCountryName" class="form-label">Nom</label>
+                                <input type="text" class="form-control" id="editCountryName">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editCountryPopulation" class="form-label">Population</label>
+                                <input type="number" class="form-control" id="editCountryPopulation">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editCountryEconomy" class="form-label">Économie</label>
+                                <input type="number" class="form-control" id="editCountryEconomy" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCountryArmy" class="form-label">Force Militaire</label>
+                                <input type="number" class="form-control" id="editCountryArmy" min="0" max="100">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editCountryStability" class="form-label">Stabilité</label>
+                                <input type="number" class="form-control" id="editCountryStability" min="0" max="100">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="editCountryLocked">
+                                    <label class="form-check-label" for="editCountryLocked">
+                                        Pays Verrouillé
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>Ressources</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editCountryMoney" class="form-label">Argent</label>
+                                <input type="number" class="form-control" id="editCountryMoney">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editCountryFood" class="form-label">Nourriture</label>
+                                <input type="number" class="form-control" id="editCountryFood">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editCountryMetal" class="form-label">Métal</label>
+                                <input type="number" class="form-control" id="editCountryMetal">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editCountryOil" class="form-label">Pétrole</label>
+                                <input type="number" class="form-control" id="editCountryOil">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editCountryEnergy" class="form-label">Énergie</label>
+                                <input type="number" class="form-control" id="editCountryEnergy">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editCountryMaterials" class="form-label">Matériaux</label>
+                                <input type="number" class="form-control" id="editCountryMaterials">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="saveCountry()">Sauvegarder</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let rolesChart, economyChart, statisticsChart;
+
+function updateDashboard() {
+    if (!currentData.countries || !currentData.players) return;
+    
+    // Update statistics
+    document.getElementById('countries-count').textContent = currentData.countries.length;
+    document.getElementById('players-count').textContent = currentData.players.length;
+    document.getElementById('wars-count').textContent = currentData.wars ? currentData.wars.filter(w => !w.ended_at).length : 0;
+    
+    const totalEconomy = currentData.countries.reduce((sum, country) => sum + (country.economy || 0), 0);
+    document.getElementById('total-economy').textContent = formatNumber(totalEconomy);
+    
+    // Update charts
+    updateRolesChart();
+    updateEconomyChart();
+    updateTables();
+    updateRecentActivity();
+    updateAlerts();
+}
+
+function updateRolesChart() {
+    if (!currentData.players) return;
+    
+    const roleCounts = {};
+    currentData.players.forEach(player => {
+        const role = player.role || 'recruit';
+        roleCounts[role] = (roleCounts[role] || 0) + 1;
+    });
+    
+    const ctx = document.getElementById('rolesChart').getContext('2d');
+    if (rolesChart) rolesChart.destroy();
+    
+    rolesChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(roleCounts),
+            datasets: [{
+                data: Object.values(roleCounts),
+                backgroundColor: [
+                    '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#ffffff'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateEconomyChart() {
+    if (!currentData.countries) return;
+    
+    const topCountries = currentData.countries
+        .sort((a, b) => (b.economy || 0) - (a.economy || 0))
+        .slice(0, 5);
+    
+    const ctx = document.getElementById('economyChart').getContext('2d');
+    if (economyChart) economyChart.destroy();
+    
+    economyChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: topCountries.map(c => c.name),
+            datasets: [{
+                label: 'Économie',
+                data: topCountries.map(c => c.economy || 0),
+                backgroundColor: '#5865f2'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#ffffff'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        color: '#ffffff'
+                    },
+                    grid: {
+                        color: '#40444b'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#ffffff'
+                    },
+                    grid: {
+                        color: '#40444b'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateTables() {
+    updateCountriesTable();
+    updatePlayersTable();
+    updateWarsTable();
+    updateEventsTable();
+}
+
+function updateCountriesTable() {
+    const tbody = document.getElementById('countries-table');
+    if (!currentData.countries) return;
+    
+    tbody.innerHTML = currentData.countries.map(country => {
+        const resources = country.resources || {};
+        const leader = currentData.players ? currentData.players.find(p => p.id === country.leader_id) : null;
+        
+        return `
+            <tr>
+                <td><strong>${country.name}</strong></td>
+                <td>${leader ? leader.username : 'Aucun'}</td>
+                <td>${formatNumber(country.population || 0)}</td>
+                <td><span class="badge bg-success">${country.economy || 0}/100</span></td>
+                <td><span class="badge bg-danger">${country.army_strength || 0}/100</span></td>
+                <td><span class="badge bg-info">${country.stability || 0}%</span></td>
+                <td>
+                    <span class="badge ${country.is_locked ? 'bg-warning' : 'bg-success'}">
+                        ${country.is_locked ? 'Verrouillé' : 'Ouvert'}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editCountry('${country.id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCountry('${country.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updatePlayersTable() {
+    const tbody = document.getElementById('players-table');
+    if (!currentData.players) return;
+    
+    tbody.innerHTML = currentData.players.map(player => {
+        const country = currentData.countries ? currentData.countries.find(c => c.id === player.country_id) : null;
+        
+        return `
+            <tr>
+                <td><strong>${player.username}</strong></td>
+                <td>${country ? country.name : 'Aucun pays'}</td>
+                <td><span class="badge bg-primary">${player.role || 'recruit'}</span></td>
+                <td>${formatNumber(player.balance || 0)} 💵</td>
+                <td>${formatDate(player.joined_at)}</td>
+                <td>
+                    <button class="btn btn-sm btn-warning" onclick="editPlayer('${player.id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updateWarsTable() {
+    const tbody = document.getElementById('wars-table');
+    if (!currentData.wars) return;
+    
+    tbody.innerHTML = currentData.wars.map(war => {
+        const attacker = currentData.countries ? currentData.countries.find(c => c.id === war.attacker_id) : null;
+        const defender = currentData.countries ? currentData.countries.find(c => c.id === war.defender_id) : null;
+        const status = war.ended_at ? 'Terminée' : 'Active';
+        const statusClass = war.ended_at ? 'bg-secondary' : 'bg-danger';
+        
+        return `
+            <tr>
+                <td>${attacker ? attacker.name : 'Inconnu'}</td>
+                <td>${defender ? defender.name : 'Inconnu'}</td>
+                <td>${formatDate(war.started_at)}</td>
+                <td><span class="badge ${statusClass}">${status}</span></td>
+                <td>
+                    ${!war.ended_at ? `
+                        <button class="btn btn-sm btn-warning" onclick="endWar('${war.id}')">
+                            <i class="fas fa-stop"></i>
+                        </button>
+                    ` : ''}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updateEventsTable() {
+    const tbody = document.getElementById('events-table');
+    if (!currentData.events) return;
+    
+    tbody.innerHTML = currentData.events.map(event => {
+        const country = currentData.countries ? currentData.countries.find(c => c.id === event.target_country) : null;
+        const impact = event.impact ? JSON.stringify(event.impact) : 'Aucun';
+        
+        return `
+            <tr>
+                <td><span class="badge bg-warning">${event.type}</span></td>
+                <td>${event.description}</td>
+                <td>${country ? country.name : 'Inconnu'}</td>
+                <td>${formatDate(event.created_at)}</td>
+                <td><small>${impact}</small></td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updateRecentActivity() {
+    const container = document.getElementById('recent-activity');
+    // Simuler l'activité récente
+    container.innerHTML = `
+        <div class="d-flex align-items-center mb-2">
+            <i class="fas fa-user-plus text-success me-2"></i>
+            <small>Nouveau joueur rejoint</small>
+        </div>
+        <div class="d-flex align-items-center mb-2">
+            <i class="fas fa-sword text-danger me-2"></i>
+            <small>Guerre déclarée</small>
+        </div>
+        <div class="d-flex align-items-center mb-2">
+            <i class="fas fa-coins text-warning me-2"></i>
+            <small>Commerce effectué</small>
+        </div>
+    `;
+}
+
+function updateAlerts() {
+    const container = document.getElementById('alerts');
+    const alerts = [];
+    
+    // Vérifier les pays avec une stabilité faible
+    if (currentData.countries) {
+        const lowStability = currentData.countries.filter(c => c.stability < 30);
+        if (lowStability.length > 0) {
+            alerts.push({
+                type: 'warning',
+                message: `${lowStability.length} pays avec une stabilité faible`
+            });
+        }
+    }
+    
+    // Vérifier les guerres actives
+    if (currentData.wars) {
+        const activeWars = currentData.wars.filter(w => !w.ended_at);
+        if (activeWars.length > 5) {
+            alerts.push({
+                type: 'danger',
+                message: `${activeWars.length} guerres actives`
+            });
+        }
+    }
+    
+    if (alerts.length === 0) {
+        container.innerHTML = '<div class="text-success"><i class="fas fa-check-circle"></i> Aucune alerte</div>';
+    } else {
+        container.innerHTML = alerts.map(alert => `
+            <div class="alert alert-${alert.type} alert-sm">
+                <i class="fas fa-exclamation-triangle"></i> ${alert.message}
+            </div>
+        `).join('');
+    }
+}
+
+// Modal functions
+function showCreateCountryModal() {
+    const modal = new bootstrap.Modal(document.getElementById('createCountryModal'));
+    modal.show();
+}
+
+function createCountry() {
+    const name = document.getElementById('countryName').value;
+    const population = parseInt(document.getElementById('countryPopulation').value);
+    const economy = parseInt(document.getElementById('countryEconomy').value);
+    
+    if (!name) {
+        showAlert('danger', 'Le nom du pays est requis');
+        return;
+    }
+    
+    fetch('/api/countries', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            name: name,
+            population: population,
+            economy: economy,
+            army_strength: 20,
+            stability: 80,
+            resources: {
+                money: 5000,
+                food: 200,
+                metal: 50,
+                oil: 80,
+                energy: 100,
+                materials: 30
+            },
+            is_locked: false
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Pays créé avec succès');
+            bootstrap.Modal.getInstance(document.getElementById('createCountryModal')).hide();
+            requestUpdate();
+        } else {
+            showAlert('danger', data.error || 'Erreur lors de la création');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erreur de connexion');
+    });
+}
+
+function editCountry(countryId) {
+    const country = currentData.countries.find(c => c.id === countryId);
+    if (!country) return;
+    
+    // Remplir le formulaire
+    document.getElementById('editCountryId').value = country.id;
+    document.getElementById('editCountryName').value = country.name;
+    document.getElementById('editCountryPopulation').value = country.population || 0;
+    document.getElementById('editCountryEconomy').value = country.economy || 0;
+    document.getElementById('editCountryArmy').value = country.army_strength || 0;
+    document.getElementById('editCountryStability').value = country.stability || 0;
+    document.getElementById('editCountryLocked').checked = country.is_locked || false;
+    
+    const resources = country.resources || {};
+    document.getElementById('editCountryMoney').value = resources.money || 0;
+    document.getElementById('editCountryFood').value = resources.food || 0;
+    document.getElementById('editCountryMetal').value = resources.metal || 0;
+    document.getElementById('editCountryOil').value = resources.oil || 0;
+    document.getElementById('editCountryEnergy').value = resources.energy || 0;
+    document.getElementById('editCountryMaterials').value = resources.materials || 0;
+    
+    const modal = new bootstrap.Modal(document.getElementById('editCountryModal'));
+    modal.show();
+}
+
+function saveCountry() {
+    const countryId = document.getElementById('editCountryId').value;
+    const data = {
+        name: document.getElementById('editCountryName').value,
+        population: parseInt(document.getElementById('editCountryPopulation').value),
+        economy: parseInt(document.getElementById('editCountryEconomy').value),
+        army_strength: parseInt(document.getElementById('editCountryArmy').value),
+        stability: parseInt(document.getElementById('editCountryStability').value),
+        is_locked: document.getElementById('editCountryLocked').checked,
+        resources: {
+            money: parseInt(document.getElementById('editCountryMoney').value),
+            food: parseInt(document.getElementById('editCountryFood').value),
+            metal: parseInt(document.getElementById('editCountryMetal').value),
+            oil: parseInt(document.getElementById('editCountryOil').value),
+            energy: parseInt(document.getElementById('editCountryEnergy').value),
+            materials: parseInt(document.getElementById('editCountryMaterials').value)
+        }
+    };
+    
+    fetch(`/api/countries/${countryId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Pays modifié avec succès');
+            bootstrap.Modal.getInstance(document.getElementById('editCountryModal')).hide();
+            requestUpdate();
+        } else {
+            showAlert('danger', data.error || 'Erreur lors de la modification');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erreur de connexion');
+    });
+}
+
+function deleteCountry(countryId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce pays ? Cette action est irréversible.')) {
+        return;
+    }
+    
+    fetch(`/api/countries/${countryId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Pays supprimé avec succès');
+            requestUpdate();
+        } else {
+            showAlert('danger', data.error || 'Erreur lors de la suppression');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erreur de connexion');
+    });
+}
+
+// Tool functions
+function resetAllResources() {
+    if (!confirm('Réinitialiser toutes les ressources ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function resetAllStats() {
+    if (!confirm('Réinitialiser toutes les statistiques ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function backupDatabase() {
+    showAlert('info', 'Sauvegarde en cours...');
+    fetch('/api/tools/backup', { method: 'POST' })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Sauvegarde terminée');
+        } else {
+            showAlert('danger', 'Erreur lors de la sauvegarde');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erreur de connexion');
+    });
+}
+
+function endAllWars() {
+    if (!confirm('Terminer toutes les guerres actives ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function triggerRandomEvent() {
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function generateReport() {
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function exportPlayers() {
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function promoteAllCitizens() {
+    if (!confirm('Promouvoir tous les citoyens ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function giveAllMoney() {
+    if (!confirm('Donner de l\'argent à tous les joueurs ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function resetAllPlayers() {
+    if (!confirm('Réinitialiser tous les joueurs ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function showConfigModal() {
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function viewLogs() {
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+function restartBot() {
+    if (!confirm('Redémarrer le bot ?')) return;
+    
+    showAlert('info', 'Fonctionnalité en cours de développement');
+}
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    showLoading(false);
+    requestUpdate();
+});
+</script>
+{% endblock %}
