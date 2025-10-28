@@ -1,0 +1,23 @@
+:root {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --primary: #5865f2;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --success: #10b981;
+}
+
+html, body { background: var(--bg); color: var(--text); }
+.bg-sidebar { background: #141720; border-right: 1px solid #222733; }
+.nav-link { color: var(--muted); border-radius: 6px; margin: 2px 8px; }
+.nav-link.active, .nav-link:hover { background: rgba(88,101,242,.15); color: var(--text); }
+.card { background: var(--panel); border: 1px solid #222733; }
+.table { color: var(--text); }
+.table thead th { color: var(--muted); font-weight: 600; }
+.badge { font-weight: 600; }
+.btn-outline-primary { border-color: var(--primary); color: var(--primary); }
+.btn-outline-primary:hover { background: var(--primary); color: #fff; }
+#status-badge { font-weight: 600; }
+

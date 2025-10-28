@@ -1,31 +1,127 @@
-// Variables globales (unifiées)
+// Etat global
 let rolesChart, economyChart, statisticsChart;
 let currentData = { countries: [], players: [], wars: [], events: [] };
 
-// Fonction d'initialisation
-document.addEventListener('DOMContentLoaded', function() {
-    showLoading(false);
-    requestUpdate();
+// Socket.IO (AMÉLIORÉ)
+const socket = io({
+  transports: ['websocket', 'polling'],
+  timeout: 20000,
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionAttempts: 5,
+  maxReconnectionAttempts: 5
 });
 
-// Mise à jour du dashboard
-function updateDashboard() {
-    if (!currentData.countries || !currentData.players) return;
+socket.on('connect', () => {
+  console.log('✅ Socket.IO connecté');
+  setStatus('Connecté');
+  requestUpdate();
+});
+
+socket.on('disconnect', (reason) => {
+  console.log('❌ Socket.IO déconnecté:', reason);
+  setStatus('Déconnecté');
+});
+
+socket.on('connect_error', (error) => {
+  console.error('❌ Erreur connexion Socket.IO:', error);
+  setStatus('Erreur de connexion');
+});
+
+socket.on('reconnect', (attemptNumber) => {
+  console.log('🔄 Socket.IO reconnecté après', attemptNumber, 'tentatives');
+  setStatus('Reconnecté');
+  requestUpdate();
+});
+
+socket.on('reconnect_error', (error) => {
+  console.error('❌ Erreur reconnexion Socket.IO:', error);
+  setStatus('Erreur de reconnexion');
+});
+
+socket.on('reconnect_failed', () => {
+  console.error('❌ Échec reconnexion Socket.IO');
+  setStatus('Connexion échouée');
+});
+
+socket.on('data_update', (data) => {
+  console.log('📊 Données mises à jour via Socket.IO');
+  currentData = data || {};
+  try { 
+    updateDashboard(); 
+  } catch (e) { 
+    console.error('❌ Erreur mise à jour dashboard:', e);
+  }
+});
+
+socket.on('error', (error) => {
+  console.error('❌ Erreur Socket.IO:', error);
+  showAlert('danger', `Erreur Socket.IO: ${error.message || error}`);
+});
+
+// Helpers UI
+function setStatus(text){ const el=document.getElementById('status-badge'); if(el) el.textContent=text; }
+function showAlert(type, message){
+  const container = document.querySelector('main');
+  if(!container) return;
+  const alert = document.createElement('div');
+  alert.className = `alert alert-${type} alert-dismissible fade show`;
+  alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+  container.prepend(alert);
+  setTimeout(()=>alert.remove(), 5000);
+}
+function formatNumber(n){ try { return new Intl.NumberFormat('fr-FR').format(n||0);} catch{ return n; } }
+function formatDate(d){ return d ? new Date(d).toLocaleString('fr-FR') : '-'; }
+function requestUpdate(){ 
+  console.log('🔄 Demande de mise à jour des données');
+  socket.emit('request_update'); 
+}
+
+// Navigation latérale
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.nav-link[data-section]');
+  if(!btn) return;
+  document.querySelectorAll('.nav-link[data-section]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const name = btn.getAttribute('data-section');
+  document.querySelectorAll('.section').forEach(s=>s.style.display='none');
+  const target = document.getElementById(name);
+  if(target) target.style.display = name==='dashboard' ? '' : 'block';
+});
+
+// Bouton refresh
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('refresh-btn')?.addEventListener('click', requestUpdate);
+});
+
+// MAJ Dashboard (AMÉLIORÉE)
+function updateDashboard(){
+  console.log('📊 Mise à jour du dashboard avec:', currentData);
+  
+  if (!currentData.countries || !currentData.players) {
+    console.warn('⚠️ Données incomplètes pour la mise à jour');
+    return;
+  }
+  
+  try {
+    // Mise à jour des compteurs
+    document.getElementById('countries-count')?.replaceChildren(document.createTextNode(currentData.countries.length));
+    document.getElementById('players-count')?.replaceChildren(document.createTextNode(currentData.players.length));
+    const wars = (currentData.wars||[]).filter(w=>!w.ended_at).length;
+    document.getElementById('wars-count')?.replaceChildren(document.createTextNode(wars));
+    const totalEconomy = currentData.countries.reduce((s,c)=>s+(c.economy||0),0);
+    document.getElementById('total-economy')?.replaceChildren(document.createTextNode(formatNumber(totalEconomy)));
     
-    // Update statistics
-    document.getElementById('countries-count').textContent = currentData.countries.length;
-    document.getElementById('players-count').textContent = currentData.players.length;
-    document.getElementById('wars-count').textContent = currentData.wars ? currentData.wars.filter(w => !w.ended_at).length : 0;
-    
-    const totalEconomy = currentData.countries.reduce((sum, country) => sum + (country.economy || 0), 0);
-    document.getElementById('total-economy').textContent = formatNumber(totalEconomy);
-    
-    // Update charts
+    // Mise à jour des graphiques et tableaux
     updateRolesChart();
     updateEconomyChart();
     updateTables();
-    updateRecentActivity();
-    updateAlerts();
+    
+    console.log('✅ Dashboard mis à jour avec succès');
+  } catch (error) {
+    console.error('❌ Erreur lors de la mise à jour du dashboard:', error);
+    showAlert('warning', 'Erreur lors de la mise à jour de l\'affichage');
+  }
 }
 
 function updateRolesChart() {
@@ -168,7 +264,7 @@ function updatePlayersTable() {
                 <td><strong>${player.username}</strong></td>
                 <td>${country ? country.name : 'Aucun pays'}</td>
                 <td><span class="badge bg-primary">${player.role || 'recruit'}</span></td>
-                <td>${formatNumber(player.balance || 0)} �</td>
+                <td>${formatNumber(player.balance || 0)} 💵</td>
                 <td>${formatDate(player.joined_at)}</td>
                 <td>
                     <button class="btn btn-sm btn-warning" onclick="editPlayer('${player.id}')">
@@ -308,15 +404,31 @@ function loadTransactions() {
     const t = document.getElementById('txType').value;
     const c = document.getElementById('txCountry').value.trim();
     const p = document.getElementById('txPlayer').value.trim();
+    
+    console.log('🔍 Chargement des transactions avec filtres:', { type: t, country: c, player: p });
+    
     const params = new URLSearchParams();
     if (t) params.set('type', t);
     if (c) params.set('country_id', c);
     if (p) params.set('player_id', p);
+    
+    // Afficher un indicateur de chargement
+    const tbody = document.getElementById('transactions-table');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> Chargement...</td></tr>';
+    
     fetch(`/api/transactions?${params.toString()}`)
-    .then(r => r.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
     .then(data => {
-        const tbody = document.getElementById('transactions-table');
-        if (!data.success) { tbody.innerHTML = '<tr><td colspan="5">Erreur</td></tr>'; return; }
+        console.log('📊 Transactions chargées:', data);
+        if (!data.success) { 
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Erreur lors du chargement</td></tr>'; 
+            return; 
+        }
         const rows = (data.data || []).map(tx => {
             const details = tx.type === 'work' ? `+${formatNumber(tx.amount||0)} 💵`
                 : tx.type === 'produce' ? `${tx.resource||''}: +${formatNumber(tx.amount||0)}`
@@ -337,9 +449,13 @@ function loadTransactions() {
                 </tr>
             `;
         }).join('');
-        tbody.innerHTML = rows || '<tr><td colspan="5" class="text-center text-muted">Aucune transaction</td></tr>';
+        tbody.innerHTML = rows || '<tr><td colspan="5" class="text-center text-muted">Aucune transaction trouvée</td></tr>';
     })
-    .catch(() => showAlert('danger','Erreur de connexion'));
+    .catch(error => {
+        console.error('❌ Erreur chargement transactions:', error);
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Erreur de connexion</td></tr>';
+        showAlert('danger', `Erreur de connexion: ${error.message}`);
+    });
 }
 
 function exportTransactions() {
@@ -366,19 +482,17 @@ function exportTransactions() {
     .catch(() => showAlert('danger','Erreur de connexion'));
 }
 
-// Auto: ouvrir Transactions au chargement
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-        // masquer toutes les sections puis afficher transactions
-        const sections = document.querySelectorAll('.section');
-        sections.forEach(s => s.style.display = 'none');
-        const tx = document.getElementById('transactions');
-        if (tx) tx.style.display = 'block';
-        // charger les données
-        loadTransactions();
-    } catch (e) {
-        // fallback silencieux
+// Filtres transactions (AMÉLIORÉS)
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('btn-filter-tx')?.addEventListener('click', loadTransactions);
+  document.getElementById('btn-export-tx')?.addEventListener('click', exportTransactions);
+  
+  // Auto-refresh toutes les 30 secondes
+  setInterval(() => {
+    if (socket.connected) {
+      requestUpdate();
     }
+  }, 30000);
 });
 
 // ==================== COUNTRIES ====================
