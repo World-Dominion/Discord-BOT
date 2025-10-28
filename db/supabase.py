@@ -6,15 +6,12 @@ from typing import Optional, Dict, Any, List
 class DatabaseManager:
     def __init__(self):
         self.supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-<<<<<<< HEAD
         # table names
         self.table_players = 'players'
         self.table_countries = 'countries'
         self.table_wars = 'wars'
         self.table_events = 'events'
         self.table_transactions = 'transactions'
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
     
     # ===== PLAYERS =====
     async def create_player(self, discord_id: str, username: str) -> Dict[str, Any]:
@@ -217,7 +214,6 @@ class DatabaseManager:
             print(f"Erreur rejoindre alliance: {e}")
             return False
 
-<<<<<<< HEAD
     # ===== ECONOMY & TRANSACTIONS =====
     async def log_transaction(self, tx: Dict[str, Any]) -> bool:
         """Enregistrer une transaction économique si la table existe."""
@@ -255,7 +251,5 @@ class DatabaseManager:
             print(f"Erreur get daily totals: {e}")
             return {'work': 0, 'produce': {}, 'trade_value': 0}
 
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
 # Instance globale
 db = DatabaseManager()

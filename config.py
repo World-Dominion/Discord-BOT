@@ -17,21 +17,15 @@ ADMIN_ROLE_IDS = [int(x) for x in os.getenv('ADMIN_ROLE_IDS', '').split(',') if 
 # Configuration du jeu
 GAME_CONFIG = {
     'roles': {
-<<<<<<< HEAD
         'founder': {'name': '🛡️ Fondateur', 'level': 0},
         'high_council': {'name': '🏛️ Haut Conseil', 'level': 1},
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
-        'chief': {'name': '👑 Chef d\'État', 'level': 1},
+        'chief': {'name': "👑 Chef d'État", 'level': 1},
         'vice_chief': {'name': '⚖️ Vice-Chef', 'level': 2},
-        'economy_minister': {'name': '💰 Ministre de l\'Économie', 'level': 3},
+        'economy_minister': {'name':  '💰 Ministre de l\'Économie', 'level': 3},
         'defense_minister': {'name': '🪖 Ministre de la Défense', 'level': 4},
         'governor': {'name': '🏙️ Gouverneur', 'level': 5},
         'officer': {'name': '⚙️ Officier', 'level': 6},
-<<<<<<< HEAD
         'soldier': {'name': '🪖 Soldat', 'level': 7},
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
         'citizen': {'name': '👤 Citoyen', 'level': 7},
         'recruit': {'name': '🧒 Recrue', 'level': 8}
     },
@@ -49,7 +43,6 @@ GAME_CONFIG = {
         'aircraft': {'name': '✈️ Avions', 'cost': 1000, 'power': 100},
         'missiles': {'name': '🚀 Missiles', 'cost': 2000, 'power': 200},
         'navy': {'name': '⚓ Flotte', 'cost': 1500, 'power': 150}
-<<<<<<< HEAD
     },
     'economy_rules': {
         'work_cooldown_hours': 6,
@@ -62,7 +55,5 @@ GAME_CONFIG = {
         'inflation_percent_daily': 1,
         'interest_percent_daily': 1,
         'army_maintenance_per_strength': 50
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
     }
 }

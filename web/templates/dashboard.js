@@ -1,23 +1,12 @@
-<<<<<<< HEAD
 // Variables globales (unifiées)
 let rolesChart, economyChart, statisticsChart;
 let currentData = { countries: [], players: [], wars: [], events: [] };
-=======
-// Variables globales
-let rolesChart, economyChart, statisticsChart;
-let currentData = {
-    countries: [],
-    players: [],
-    wars: [],
-    events: []
-};
 
 // Fonction d'initialisation
 document.addEventListener('DOMContentLoaded', function() {
     showLoading(false);
     requestUpdate();
 });
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
 
 // Mise à jour du dashboard
 function updateDashboard() {
@@ -314,7 +303,6 @@ function updateAlerts() {
     }
 }
 
-<<<<<<< HEAD
 // ==================== TRANSACTIONS ====================
 function loadTransactions() {
     const t = document.getElementById('txType').value;
@@ -393,8 +381,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
 // ==================== COUNTRIES ====================
 
 function showCreateCountryModal() {
@@ -901,7 +887,6 @@ function restartBot() {
     if (!confirm('Redémarrer le bot ? Cette action prendra quelques secondes.')) return;
     
     showAlert('info', 'Fonctionnalité en cours de développement - Contactez l\'administrateur système');
-<<<<<<< HEAD
 }
 
 // Don (Admin)
@@ -930,6 +915,4 @@ function openGiveModal() {
         else { showAlert('danger', data.error || 'Erreur lors du don'); }
     })
     .catch(() => showAlert('danger', 'Erreur de connexion'));
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
 }

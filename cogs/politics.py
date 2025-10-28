@@ -162,20 +162,9 @@ class PoliticsCog(commands.Cog):
         votes = view.get_votes()
         if votes['yes'] > votes['no']:
             # Le candidat gagne
-<<<<<<< HEAD
-            # Utiliser les IDs internes joueurs
-            new_leader = await db.get_player(str(candidate.id))
-            current_leader = await db.get_player_by_id(country['leader_id']) if country.get('leader_id') else None
-            if new_leader:
-                await db.update_player(str(candidate.id), {'role': 'chief'})
-                if current_leader:
-                    await db.update_player(current_leader['discord_id'], {'role': 'vice_chief'})
-                await db.update_country(country['id'], {'leader_id': new_leader['id']})
-=======
             await db.update_player(str(candidate.id), {'role': 'chief'})
             await db.update_player(str(country['leader_id']), {'role': 'vice_chief'})
             await db.update_country(country['id'], {'leader_id': candidate.id})
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
             
             embed = discord.Embed(
                 title="🎉 Élection Terminée",

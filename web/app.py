@@ -11,8 +11,8 @@ app.config['SECRET_KEY'] = os.getenv('WEB_SECRET_KEY', secrets.token_hex(32))
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Configuration
-DISCORD_CLIENT_ID = os.getenv('DISCORD_CLIENT_ID')
-DISCORD_CLIENT_SECRET = os.getenv('DISCORD_CLIENT_SECRET')
+discord_client_id = os.getenv('DISCORD_CLIENT_ID')
+discord_client_secret = os.getenv('DISCORD_CLIENT_SECRET')
 BASE_URL = os.getenv('RENDER_EXTERNAL_URL') or os.getenv('WEB_PANEL_URL') or os.getenv('HOST_IP', 'http://localhost:5000')
 DISCORD_REDIRECT_URI = os.getenv('DISCORD_REDIRECT_URI', BASE_URL + '/callback')
 ADMIN_ROLE_IDS = [int(x) for x in os.getenv('ADMIN_ROLE_IDS', '').split(',') if x.strip()]
@@ -29,23 +29,18 @@ DISCORD_BOT_TOKEN = os.getenv('DISCORD_TOKEN')
 class WebAdminManager:
     def __init__(self):
         self.bot = None
-    
     def is_admin(self, user_data):
-        """Vérifier si l'utilisateur est admin"""
         if not user_data or 'guilds' not in user_data:
             print("❌ Pas de données utilisateur ou guildes")
             return False
-        
         guild_id = str(os.getenv('DISCORD_GUILD_ID'))
-        print(f"� Recherche dans la guilde: {guild_id}")
-        print(f"� Rôles admin configurés: {ADMIN_ROLE_IDS}")
-        
+        print(f" Recherche dans la guilde: {guild_id}")
+        print(f" Rôles admin configurés: {ADMIN_ROLE_IDS}")
         for guild in user_data['guilds']:
-            print(f"� Guilde trouvée: {guild['id']} - {guild.get('name', 'Inconnu')}")
+            print(f" Guilde trouvée: {guild['id']} - {guild.get('name', 'Inconnu')}")
             if guild['id'] == guild_id:
                 user_roles = guild.get('roles', [])
-                print(f"� Rôles de l'utilisateur: {user_roles}")
-                
+                print(f" Rôles de l'utilisateur: {user_roles}")
                 if not user_roles:
                     print("⚠️ Pas de rôles dans guild, tentative récupération via API")
                     try:
@@ -67,49 +62,37 @@ class WebAdminManager:
                                     return True
                     except Exception as e:
                         print(f"❌ Erreur lors de la récupération des rôles: {e}")
-                
                 user_role_ids = []
                 for role_id in user_roles:
                     try:
                         user_role_ids.append(int(role_id))
                     except (ValueError, TypeError):
                         pass
-                
-                print(f"� Rôles convertis: {user_role_ids}")
-                
+                print(f" Rôles convertis: {user_role_ids}")
                 has_admin_role = any(role_id in ADMIN_ROLE_IDS for role_id in user_role_ids)
-                print(f"� A un rôle admin: {has_admin_role}")
-                
+                print(f" A un rôle admin: {has_admin_role}")
                 if has_admin_role:
                     return True
-        
         print("❌ Aucun rôle admin trouvé")
         return False
-
 admin_manager = WebAdminManager()
 
 def is_user_admin():
-    """Vérifier si l'utilisateur dans la session est admin"""
     if 'user' not in session:
         return False
     return session['user'].get('admin', False)
 
 def send_discord_log(action, details):
-    """Envoyer un log sur Discord"""
     try:
         import requests
-        
         username = session.get('user', {}).get('username', 'Inconnu')
         user_id = session.get('user', {}).get('id', 'Inconnu')
-        
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        message = f"**� {action}**\n� **Utilisateur:** {username} ({user_id})\n� **Date:** {timestamp}\n� **Détails:** {details}"
-        
+        message = f"** {action}**\n **Utilisateur:** {username} ({user_id})\n **Date:** {timestamp}\n **Détails:** {details}"
         payload = {
             'content': message,
             'username': 'Web Admin Panel'
         }
-        
         webhook_url = os.getenv('DISCORD_WEBHOOK_URL')
         if webhook_url:
             requests.post(webhook_url, json=payload)
@@ -132,7 +115,7 @@ def login():
     if 'user' in session and is_user_admin():
         return redirect(url_for('index'))
     
-    discord_auth_url = f"https://discord.com/api/oauth2/authorize?client_id={DISCORD_CLIENT_ID}&redirect_uri={DISCORD_REDIRECT_URI}&response_type=code&scope=identify%20guilds"
+    discord_auth_url = f"https://discord.com/api/oauth2/authorize?client_id={discord_client_id}&redirect_uri={DISCORD_REDIRECT_URI}&response_type=code&scope=identify%20guilds"
     return render_template('login.html', discord_url=discord_auth_url)
 
 @app.route('/callback')
@@ -143,8 +126,8 @@ def callback():
         return redirect(url_for('login'))
     
     data = {
-        'client_id': DISCORD_CLIENT_ID,
-        'client_secret': DISCORD_CLIENT_SECRET,
+        'client_id': discord_client_id,
+        'client_secret': discord_client_secret,
         'grant_type': 'authorization_code',
         'code': code,
         'redirect_uri': DISCORD_REDIRECT_URI
@@ -495,7 +478,6 @@ def api_trigger_event():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-<<<<<<< HEAD
 # API Routes - Transactions (audit économique)
 @app.route('/api/transactions')
 def api_transactions():
@@ -526,8 +508,6 @@ def api_transactions():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
 # API Routes - Statistics
 @app.route('/api/statistics')
 def api_statistics():
@@ -639,7 +619,6 @@ def api_backup():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-<<<<<<< HEAD
 @app.route('/api/tools/give', methods=['POST'])
 def api_give():
     """Donner une ressource/argent à un joueur/pays ou à tous (admin requis).
@@ -719,8 +698,6 @@ def api_give():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
 @app.route('/api/tools/promote-citizens', methods=['POST'])
 def api_promote_citizens():
     if not is_user_admin():

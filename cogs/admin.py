@@ -4,33 +4,20 @@ from discord import app_commands
 from db.supabase import db
 from utils.embeds import GameEmbeds
 from config import ADMIN_ROLE_IDS
-<<<<<<< HEAD
 from utils.helpers import GameHelpers
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
 import asyncio
 
 class AdminCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    
     def is_admin(self, interaction: discord.Interaction) -> bool:
-        """Vérifier si l'utilisateur est admin"""
-<<<<<<< HEAD
         # Vérifier les rôles admin (Discord roles ou rôle jeu Fondateur/Haut Conseil)
-=======
-        # Vérifier les rôles admin
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
         if interaction.guild and ADMIN_ROLE_IDS:
             user_roles = [role.id for role in interaction.user.roles]
             if any(role_id in ADMIN_ROLE_IDS for role_id in user_roles):
                 return True
-<<<<<<< HEAD
-        # Vérifier rôle jeu
-        # Utilisateur doit exister en base et avoir un rôle élevé
-        # (Fondateur ou Haut Conseil autorisé à agir comme admin)
+        # Vérifier rôle jeu (Fondateur ou Haut Conseil autorisé à agir comme admin)
         try:
-            import asyncio
             player = asyncio.get_event_loop().run_until_complete(db.get_player(str(interaction.user.id)))
             if player and player.get('role') in ['founder', 'high_council']:
                 return True
@@ -59,7 +46,6 @@ class AdminCog(commands.Cog):
                 ephemeral=True
             )
             return
-
         try:
             # Cas joueur spécifique: target_id peut être vide => on prend l'appelant
             if target_type == 'player' and not target_id:
@@ -68,7 +54,6 @@ class AdminCog(commands.Cog):
                     await interaction.response.send_message(embed=GameEmbeds.error_embed("Joueur introuvable."), ephemeral=True)
                     return
                 target_id = player['id']
-
             # Appliquer dons via DB manager
             if target_type == 'player':
                 # balance seulement
@@ -81,7 +66,6 @@ class AdminCog(commands.Cog):
                     return
                 new_balance = (target_player.get('balance', 0) or 0) + amount
                 await db.update_player(target_player['discord_id'], {'balance': new_balance})
-
             elif target_type in ['country', 'all_countries']:
                 if resource not in ['money','food','metal','oil','energy','materials']:
                     await interaction.response.send_message(embed=GameEmbeds.error_embed("Ressource invalide pour un pays."), ephemeral=True)
@@ -100,12 +84,10 @@ class AdminCog(commands.Cog):
                         res = c.get('resources', {}).copy()
                         res[resource] = (res.get(resource, 0) or 0) + amount
                         await db.update_country(c['id'], {'resources': res})
-
             elif target_type == 'all_players':
                 if resource not in ['balance','money']:
                     await interaction.response.send_message(embed=GameEmbeds.error_embed("Ressource invalide pour joueurs."), ephemeral=True)
                     return
-                # mise à jour simple
                 players_result = db.supabase.table('players').select('discord_id,balance').execute()
                 for p in (players_result.data or []):
                     new_balance = (p.get('balance', 0) or 0) + amount
@@ -113,16 +95,11 @@ class AdminCog(commands.Cog):
             else:
                 await interaction.response.send_message(embed=GameEmbeds.error_embed("target_type invalide."), ephemeral=True)
                 return
-
             embed = discord.Embed(title="🎁 Don effectué", description=f"{amount} {resource} → {target_type}", color=0x00ff00)
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except Exception as e:
             await interaction.response.send_message(embed=GameEmbeds.error_embed("Erreur lors du don."), ephemeral=True)
-=======
-        
-        return False
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
-    
+
     @app_commands.command(name="create", description="Créer un nouveau pays (Admin seulement)")
     @app_commands.describe(country_name="Nom du pays à créer")
     async def create_country(self, interaction: discord.Interaction, country_name: str):

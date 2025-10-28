@@ -26,10 +26,7 @@ class EconomyCog(commands.Cog):
     ])
     async def produce(self, interaction: discord.Interaction, resource: str, amount: int):
         """Produire une ressource"""
-<<<<<<< HEAD
         rules = GAME_CONFIG.get('economy_rules', {})
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
         if amount <= 0 or amount > 1000:
             await interaction.response.send_message(
                 embed=GameEmbeds.error_embed("La quantité doit être entre 1 et 1000"),
@@ -70,8 +67,7 @@ class EconomyCog(commands.Cog):
             )
             return
         
-<<<<<<< HEAD
-        # Caps journaliers
+        # Cap quotidien
         daily = await db.get_daily_totals(player_id=player.get('id')) if player else {'produce': {}}
         daily_res = daily.get('produce', {}).get(resource, 0)
         cap = rules.get('produce_daily_cap_per_resource', 2000)
@@ -82,8 +78,6 @@ class EconomyCog(commands.Cog):
             )
             return
 
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
         # Calculer le coût
         energy_cost = GameHelpers.calculate_production_cost(resource, amount)
         current_energy = country.get('resources', {}).get('energy', 0)
@@ -102,7 +96,6 @@ class EconomyCog(commands.Cog):
         
         # Mettre à jour le pays
         await db.update_country(country['id'], {'resources': resources})
-<<<<<<< HEAD
         # Log transaction
         if GAME_CONFIG.get('economy_rules', {}).get('transaction_log_enabled'):
             await db.log_transaction({
@@ -113,8 +106,6 @@ class EconomyCog(commands.Cog):
                 'amount': amount,
                 'cost_energy': energy_cost
             })
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
         
         await interaction.response.send_message(
             embed=GameEmbeds.production_result(resource, amount, energy_cost)
@@ -147,10 +138,7 @@ class EconomyCog(commands.Cog):
     async def trade(self, interaction: discord.Interaction, target_country: str, 
                    give_resource: str, give_amount: int, receive_resource: str, receive_amount: int):
         """Échanger des ressources"""
-<<<<<<< HEAD
         rules = GAME_CONFIG.get('economy_rules', {})
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
         if give_amount <= 0 or receive_amount <= 0:
             await interaction.response.send_message(
                 embed=GameEmbeds.error_embed("Les quantités doivent être positives"),
@@ -211,7 +199,6 @@ class EconomyCog(commands.Cog):
             )
             return
         
-<<<<<<< HEAD
         # Caps valeur/jour et frais
         trade_value = give_amount + receive_amount
         daily = await db.get_daily_totals(player_id=player.get('id')) if player else {'trade_value': 0}
@@ -226,8 +213,6 @@ class EconomyCog(commands.Cog):
         fee_percent = rules.get('trade_fee_percent', 2)
         fee = GameHelpers.apply_trade_fee(give_amount, fee_percent)
 
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
         # Effectuer l'échange
         my_resources[give_resource] -= give_amount
         my_resources[receive_resource] = my_resources.get(receive_resource, 0) + receive_amount
@@ -235,7 +220,6 @@ class EconomyCog(commands.Cog):
         target_resources[receive_resource] -= receive_amount
         target_resources[give_resource] = target_resources.get(give_resource, 0) + give_amount
         
-<<<<<<< HEAD
         # Appliquer frais (déduit de l'argent du pays initiateur si applicable)
         if give_resource == 'money' and fee > 0:
             my_resources['money'] = max(0, my_resources.get('money', 0) - fee)
@@ -256,11 +240,6 @@ class EconomyCog(commands.Cog):
                 'fee': fee,
                 'value': trade_value
             })
-=======
-        # Mettre à jour les pays
-        await db.update_country(my_country['id'], {'resources': my_resources})
-        await db.update_country(target_country_data['id'], {'resources': target_resources})
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
         
         embed = discord.Embed(
             title="🤝 Échange Commercial",
@@ -423,10 +402,6 @@ class EconomyCog(commands.Cog):
     @app_commands.command(name="travail", description="Travailler pour gagner de l'argent personnel")
     async def work(self, interaction: discord.Interaction):
         """Travailler pour gagner de l'argent"""
-<<<<<<< HEAD
-        rules = GAME_CONFIG.get('economy_rules', {})
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
         # Vérifier le joueur
         player = await db.get_player(str(interaction.user.id))
         if not player:
@@ -466,7 +441,6 @@ class EconomyCog(commands.Cog):
         base_salary = role_multipliers.get(player.get('role', 'recruit'), 10)
         salary = base_salary + (player.get('balance', 0) // 1000)  # Bonus basé sur la richesse
         
-<<<<<<< HEAD
         # Caps et cooldown
         from datetime import datetime, timedelta
         # On lit le total du jour via transactions
@@ -492,11 +466,6 @@ class EconomyCog(commands.Cog):
                 'country_id': player.get('country_id'),
                 'amount': salary
             })
-=======
-        # Mettre à jour le solde du joueur
-        new_balance = player.get('balance', 0) + salary
-        await db.update_player(str(interaction.user.id), {'balance': new_balance})
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
         
         embed = discord.Embed(
             title="💼 Travail",

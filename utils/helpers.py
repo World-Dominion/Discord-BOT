@@ -15,7 +15,6 @@ class GameHelpers:
             'materials': 5   # 5 énergie = 1 matériau
         }
         return costs.get(resource, 1) * amount
-<<<<<<< HEAD
 
     @staticmethod
     def apply_trade_fee(amount: int, fee_percent: int) -> int:
@@ -23,9 +22,7 @@ class GameHelpers:
         if fee_percent <= 0:
             return 0
         return max(1, int(abs(amount) * fee_percent / 100))
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
-    
+
     @staticmethod
     def calculate_war_result(attacker: Dict[str, Any], defender: Dict[str, Any]) -> Dict[str, Any]:
         """Calculer le résultat d'une guerre"""
@@ -35,19 +32,15 @@ class GameHelpers:
             attacker.get('economy', 0) * 0.3 +
             attacker.get('stability', 0) * 0.3
         )
-        
         defender_power = (
             defender.get('army_strength', 0) * 0.4 +
             defender.get('economy', 0) * 0.3 +
             defender.get('stability', 0) * 0.3
         )
-        
         # Ajouter un facteur aléatoire (±20%)
         attacker_power *= random.uniform(0.8, 1.2)
         defender_power *= random.uniform(0.8, 1.2)
-        
         if attacker_power > defender_power:
-            # Attaquant gagne
             damage = min(20, int((attacker_power - defender_power) / 10))
             return {
                 'winner': 'attacker',
@@ -56,7 +49,6 @@ class GameHelpers:
                 'defender_power': int(defender_power)
             }
         else:
-            # Défenseur gagne
             damage = min(20, int((defender_power - attacker_power) / 10))
             return {
                 'winner': 'defender',
@@ -64,110 +56,70 @@ class GameHelpers:
                 'attacker_power': int(attacker_power),
                 'defender_power': int(defender_power)
             }
-    
+
     @staticmethod
     def apply_war_damage(country: Dict[str, Any], damage: int) -> Dict[str, Any]:
         """Appliquer les dégâts de guerre à un pays"""
-        # Réduire la stabilité
         new_stability = max(0, country.get('stability', 0) - damage)
-        
-        # Réduire l'économie
         new_economy = max(0, country.get('economy', 0) - damage // 2)
-        
-        # Réduire la force militaire
         new_army = max(0, country.get('army_strength', 0) - damage // 3)
-        
-        # Réduire les ressources
         resources = country.get('resources', {}).copy()
         for resource in resources:
             resources[resource] = max(0, resources[resource] - damage * 10)
-        
         return {
             'stability': new_stability,
             'economy': new_economy,
             'army_strength': new_army,
             'resources': resources
         }
-    
+
     @staticmethod
     def can_player_use_command(player_role: str, command_type: str) -> bool:
         """Vérifier si un joueur peut utiliser une commande selon son rang"""
         role_levels = {
-<<<<<<< HEAD
             'founder': 0,
             'high_council': 1,
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
             'chief': 1,
             'vice_chief': 2,
             'economy_minister': 3,
             'defense_minister': 4,
             'governor': 5,
             'officer': 6,
-<<<<<<< HEAD
             'soldier': 7,
-=======
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
             'citizen': 7,
             'recruit': 8
         }
-        
         command_requirements = {
-<<<<<<< HEAD
-            'budget': 1,      # Chef d'État / Haut Conseil / Fondateur
+            'budget': 1,
             'promote': 1,
             'tax': 1,
             'war': 1,
-            'commerce': 2,    # Vice-Chef et plus
+            'commerce': 2,
             'election': 2,
-            'produce': 3,     # Ministre Économie et plus
+            'produce': 3,
             'bank': 3,
-            'army': 4,        # Ministre Défense et plus
+            'army': 4,
             'attack': 4,
             'spy': 4,
-            'recruit': 5,     # Gouverneur et plus
+            'recruit': 5,
             'infra': 5,
-            'train': 6,       # Officier et plus
+            'train': 6,
             'defend': 6,
-            'work': 7,        # Citoyen/Soldat et plus
+            'work': 7,
             'vote': 7,
             'join': 8,
-            'give': 0         # Fondateur seulement (ou admin panel)
-=======
-            'budget': 1,      # Chef d'État seulement
-            'promote': 1,     # Chef d'État seulement
-            'tax': 1,         # Chef d'État seulement
-            'war': 1,         # Chef d'État seulement
-            'commerce': 2,    # Vice-Chef et plus
-            'election': 2,    # Vice-Chef et plus
-            'produce': 3,     # Ministre Économie et plus
-            'bank': 3,        # Ministre Économie et plus
-            'army': 4,        # Ministre Défense et plus
-            'attack': 4,      # Ministre Défense et plus
-            'spy': 4,         # Ministre Défense et plus
-            'recruit': 5,     # Gouverneur et plus
-            'infra': 5,       # Gouverneur et plus
-            'train': 6,       # Officier et plus
-            'defend': 6,      # Officier et plus
-            'work': 7,        # Citoyen et plus
-            'vote': 7,        # Citoyen et plus
-            'join': 8         # Tous
->>>>>>> b556a5d867764cde2324721253152c4615c2bcc6
+            'give': 0
         }
-        
         player_level = role_levels.get(player_role, 8)
         required_level = command_requirements.get(command_type, 8)
-        
         return player_level <= required_level
-    
+
     @staticmethod
     def format_number(number: int) -> str:
-        """Formater un nombre avec des séparateurs de milliers"""
         return f"{number:,}"
-    
+
     @staticmethod
     def get_random_event() -> Dict[str, Any]:
-        """Générer un événement aléatoire"""
         events = [
             {
                 'type': 'economic',
@@ -200,26 +152,23 @@ class GameHelpers:
                 'effects': {'stability': -15, 'army_strength': 5}
             }
         ]
-        
         return random.choice(events)
-    
+
     @staticmethod
     def calculate_tax_revenue(population: int, tax_rate: int) -> int:
-        """Calculer les revenus fiscaux"""
-        base_revenue = population * 0.01  # 1% de la population
+        base_revenue = population * 0.01
         tax_multiplier = tax_rate / 100.0
         return int(base_revenue * tax_multiplier)
-    
+
     @staticmethod
     def calculate_tax_satisfaction_impact(tax_rate: int) -> int:
-        """Calculer l'impact sur la satisfaction des citoyens"""
         if tax_rate <= 10:
-            return 5  # Très satisfait
+            return 5
         elif tax_rate <= 20:
-            return 0  # Neutre
+            return 0
         elif tax_rate <= 30:
-            return -5  # Mécontent
+            return -5
         elif tax_rate <= 40:
-            return -10  # Très mécontent
+            return -10
         else:
-            return -20  # Révolte possible
+            return -20
