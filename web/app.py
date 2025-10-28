@@ -1105,6 +1105,7 @@ def handle_update_request():
         players_data = []
         wars_data = []
         events_data = []
+        elements_data = []  # NOUVEAU
         
         try:
             countries = supabase.table('countries').select('*').execute()
@@ -1134,11 +1135,19 @@ def handle_update_request():
             print(f"❌ Erreur récupération événements: {e}")
             events_data = []
         
+        try:  # NOUVEAU
+            elements = supabase.table('elements').select('*').order('created_at', desc=True).limit(50).execute()
+            elements_data = elements.data or []
+        except Exception as e:
+            print(f"❌ Erreur récupération éléments: {e}")
+            elements_data = []
+        
         emit('data_update', {
             'countries': countries_data,
             'players': players_data,
             'wars': wars_data,
             'events': events_data,
+            'elements': elements_data,  # NOUVEAU
             'timestamp': datetime.now().isoformat()
         })
         print(f"✅ Données mises à jour via Socket.IO")
@@ -1146,6 +1155,52 @@ def handle_update_request():
     except Exception as e:
         print(f"❌ Erreur générale Socket.IO: {e}")
         emit('error', {'message': f'Update error: {str(e)}'})
+
+# ==================== ELEMENTS ENDPOINTS ====================
+
+@app.route('/api/elements', methods=['GET'])
+@rate_limit
+@require_admin
+@require_database
+def get_elements():
+    """Récupérer tous les éléments"""
+    try:
+        elements = supabase.table('elements').select('*').order('created_at', desc=True).execute()
+        return jsonify(elements.data or [])
+    except Exception as e:
+        print(f"Erreur récupération éléments: {e}")
+        return jsonify([])
+
+@app.route('/api/elements/<element_id>', methods=['DELETE'])
+@rate_limit
+@require_admin
+@require_database
+def delete_element(element_id):
+    """Supprimer un élément"""
+    try:
+        supabase.table('elements').delete().eq('id', element_id).execute()
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Erreur suppression élément: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/generate_element', methods=['POST'])
+@rate_limit
+@require_admin
+@require_database
+def generate_element():
+    """Générer un élément avec IA Gemini"""
+    try:
+        from utils.ai_helper_gemini import generate_vibrant_element
+        data = request.json
+        element_type = data.get('type', 'objet')
+        element_name = data.get('name', 'Élément mystérieux')
+        
+        result = generate_vibrant_element(element_type, element_name)
+        return jsonify(result)
+    except Exception as e:
+        print(f"Erreur génération élément: {e}")
+        return jsonify({'error': str(e)}), 500
 
 # ==================== TOOLS ENDPOINTS (CORRIGÉS) ====================
 

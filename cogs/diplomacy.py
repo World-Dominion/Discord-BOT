@@ -273,29 +273,41 @@ class DiplomacyCog(commands.Cog):
             )
             return
         
-        # Simuler l'embargo
-        embed = discord.Embed(
-            title="🚫 Embargo Déclaré",
-            description=f"Embargo mis sur {target_country}",
-            color=0xff0000
-        )
-        embed.add_field(
-            name="Déclaré par",
-            value=interaction.user.mention,
-            inline=True
-        )
-        embed.add_field(
-            name="Cible",
-            value=target_country,
-            inline=True
-        )
-        embed.add_field(
-            name="Effet",
-            value="Commerce bloqué",
-            inline=True
-        )
+        # Créer le menu
+        view = EmbargoView(target_country_data, my_country, interaction.user)
         
-        await interaction.response.send_message(embed=embed)
+        embed = discord.Embed(title=f"🚫 Gestion Embargo - {target_country}", description="Choisissez une action :", color=0xff9900)
+        embed.add_field(name="Pays cible", value=target_country, inline=True)
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+class EmbargoView(discord.ui.View):
+    def __init__(self, target_country: dict, my_country: dict, user: discord.Member):
+        super().__init__(timeout=300)
+        self.target_country = target_country
+        self.my_country = my_country
+        self.user = user
+    
+    @discord.ui.button(label="🚫 Appliquer Embargo", style=discord.ButtonStyle.danger)
+    async def apply_embargo(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.user.id:
+            await interaction.response.send_message(embed=GameEmbeds.error_embed("Ce menu ne vous appartient pas."), ephemeral=True)
+            return
+        
+        # Log embargo dans DB (optionnel)
+        embed = discord.Embed(title="🚫 Embargo Appliqué", description=f"Embargo actif sur {self.target_country['name']}", color=0xff0000)
+        embed.add_field(name="Effet", value="Commerce bloqué avec ce pays", inline=False)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        self.stop()
+    
+    @discord.ui.button(label="✅ Lever Embargo", style=discord.ButtonStyle.success)
+    async def remove_embargo(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.user.id:
+            await interaction.response.send_message(embed=GameEmbeds.error_embed("Ce menu ne vous appartient pas."), ephemeral=True)
+            return
+        
+        embed = discord.Embed(title="✅ Embargo Levé", description=f"Relations commerciales rétablies avec {self.target_country['name']}", color=0x00ff00)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        self.stop()
 
 async def setup(bot):
     await bot.add_cog(DiplomacyCog(bot))
