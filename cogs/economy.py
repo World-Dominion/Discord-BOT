@@ -4,7 +4,7 @@ from discord import app_commands
 from db.supabase import db
 from utils.embeds import GameEmbeds
 from utils.helpers import GameHelpers
-from utils.ai_helper import generate_element_details
+from utils.ai_helper_gemini import generate_element_details
 from config import GAME_CONFIG
 import asyncio
 
@@ -442,8 +442,25 @@ class EconomyCog(commands.Cog):
         base_salary = role_multipliers.get(player.get('role', 'recruit'), 10)
         salary = base_salary + (player.get('balance', 0) // 1000)  # Bonus basé sur la richesse
         
-        # Caps et cooldown
+        # Caps et cooldown - NOUVEAU SYSTÈME
         from datetime import datetime, timedelta
+        current_time = datetime.utcnow()
+        
+        # Vérifier le cooldown (6 heures)
+        last_work = player.get('last_work_time')
+        if last_work:
+            last_work_time = datetime.fromisoformat(last_work) if isinstance(last_work, str) else last_work
+            cooldown_hours = 6
+            time_since_last_work = current_time - last_work_time
+            
+            if time_since_last_work.total_seconds() < cooldown_hours * 3600:
+                hours_left = cooldown_hours - (time_since_last_work.total_seconds() / 3600)
+                await interaction.response.send_message(
+                    embed=GameEmbeds.error_embed(f"⏱️ Cooldown actif ! Vous pourrez retravailler dans {hours_left:.1f}h"),
+                    ephemeral=True
+                )
+                return
+        
         # On lit le total du jour via transactions
         totals = await db.get_daily_totals(player_id=player.get('id'))
         daily_work = totals.get('work', 0)
@@ -455,9 +472,21 @@ class EconomyCog(commands.Cog):
             )
             return
 
-        # Mettre à jour le solde du joueur
-        new_balance = player.get('balance', 0) + salary
-        await db.update_player(str(interaction.user.id), {'balance': new_balance})
+        # NOUVEAU : Calcul des taxes (15% pour le pays)
+        tax_rate = 0.15  # 15% de taxe
+        tax_amount = int(salary * tax_rate)
+        net_salary = salary - tax_amount
+        
+        # Mettre à jour le solde du joueur avec le salaire NET
+        new_balance = player.get('balance', 0) + net_salary
+        await db.update_player(str(interaction.user.id), {'balance': new_balance, 'last_work_time': current_time.isoformat()})
+        
+        # NOUVEAU : Ajouter la taxe à la banque du pays
+        country = await db.get_country(player['country_id'])
+        if country:
+            country_resources = country.get('resources', {})
+            country_resources['money'] = country_resources.get('money', 0) + tax_amount
+            await db.update_country(country['id'], {'resources': country_resources})
 
         # Log transaction
         if GAME_CONFIG.get('economy_rules', {}).get('transaction_log_enabled'):
@@ -474,15 +503,26 @@ class EconomyCog(commands.Cog):
             color=0x00ff00
         )
         embed.add_field(
-            name="Salaire gagné",
+            name="Salaire brut",
             value=f"{salary:,} 💵",
+            inline=True
+        )
+        embed.add_field(
+            name="Taxe (15%)",
+            value=f"-{tax_amount:,} 💵",
+            inline=True
+        )
+        embed.add_field(
+            name="Salaire net reçu",
+            value=f"{net_salary:,} 💵",
             inline=True
         )
         embed.add_field(
             name="Nouveau solde",
             value=f"{new_balance:,} 💵",
-            inline=True
+            inline=False
         )
+        embed.set_footer(text="⏱️ Prochain travail disponible dans 6h")
         
         await interaction.response.send_message(embed=embed)
     

@@ -34,7 +34,7 @@ class AdminCog(commands.Cog):
     )
     async def give(self, interaction: discord.Interaction, target_type: str, resource: str, amount: int, target_id: str = None):
         """Commande admin /give"""
-        if not self.is_admin(interaction):
+        if not await self.is_admin(interaction):
             await interaction.response.send_message(
                 embed=GameEmbeds.error_embed("❌ Vous n'avez pas les permissions d'administrateur."),
                 ephemeral=True
@@ -104,7 +104,7 @@ class AdminCog(commands.Cog):
     @app_commands.describe(country_name="Nom du pays à créer")
     async def create_country(self, interaction: discord.Interaction, country_name: str):
         """Créer un nouveau pays (Admin seulement)"""
-        if not self.is_admin(interaction):
+        if not await self.is_admin(interaction):
             await interaction.response.send_message(
                 embed=GameEmbeds.error_embed("❌ Vous n'avez pas les permissions d'administrateur."),
                 ephemeral=True
@@ -190,7 +190,7 @@ class AdminCog(commands.Cog):
     )
     async def assign_country(self, interaction: discord.Interaction, country_name: str, user: discord.Member):
         """Assigner un pays à un joueur (Admin seulement)"""
-        if not self.is_admin(interaction):
+        if not await self.is_admin(interaction):
             await interaction.response.send_message(
                 embed=GameEmbeds.error_embed("❌ Vous n'avez pas les permissions d'administrateur."),
                 ephemeral=True
@@ -272,7 +272,7 @@ class AdminCog(commands.Cog):
     @app_commands.command(name="admin-list", description="Lister tous les pays et leurs leaders (Admin seulement)")
     async def admin_list_countries(self, interaction: discord.Interaction):
         """Lister tous les pays (Admin seulement)"""
-        if not self.is_admin(interaction):
+        if not await self.is_admin(interaction):
             await interaction.response.send_message(
                 embed=GameEmbeds.error_embed("❌ Vous n'avez pas les permissions d'administrateur."),
                 ephemeral=True
@@ -312,7 +312,7 @@ class AdminCog(commands.Cog):
     @app_commands.command(name="delete", description="Supprimer des éléments d'un pays (Admin seulement)")
     async def delete_country_data(self, interaction: discord.Interaction):
         """Supprimer des éléments d'un pays - Étape 1: Sélection du pays"""
-        if not self.is_admin(interaction):
+        if not await self.is_admin(interaction):
             await interaction.response.send_message(
                 embed=GameEmbeds.error_embed("❌ Vous n'avez pas les permissions d'administrateur."),
                 ephemeral=True

@@ -280,27 +280,7 @@ class CountryCog(commands.Cog):
         
         await interaction.response.send_message(embed=embed)
     
-    @app_commands.command(name="classement", description="Afficher le classement mondial des pays")
-    async def leaderboard(self, interaction: discord.Interaction):
-        """Afficher le classement mondial"""
-        # Récupérer tous les pays
-        countries = await db.get_all_countries()
-        if not countries:
-            await interaction.response.send_message(
-                embed=GameEmbeds.error_embed("Aucun pays trouvé."),
-                ephemeral=True
-            )
-            return
-        
-        # Trier par score global
-        countries.sort(key=lambda c: (
-            c.get('economy', 0) + 
-            c.get('army_strength', 0) + 
-            c.get('stability', 0)
-        ), reverse=True)
-        
-        embed = GameEmbeds.leaderboard(countries)
-        await interaction.response.send_message(embed=embed)
+    # Commande /classement SUPPRIMÉE selon demande
     
     @app_commands.command(name="profil", description="Consulter votre profil de joueur")
     async def profile(self, interaction: discord.Interaction):
@@ -485,6 +465,81 @@ class CountrySelect(discord.ui.Select):
         )
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
+class LockCountryView(discord.ui.View):
+    def __init__(self, country: dict, player: dict, user: discord.Member):
+        super().__init__(timeout=300)  # 5 minutes
+        self.country = country
+        self.player = player
+        self.user = user
+    
+    @discord.ui.button(label="🔒 Verrouiller", style=discord.ButtonStyle.danger)
+    async def lock_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.user.id:
+            await interaction.response.send_message(
+                embed=GameEmbeds.error_embed("Ce menu ne vous appartient pas."),
+                ephemeral=True
+            )
+            return
+        
+        if self.country.get('is_locked', False):
+            await interaction.response.send_message(
+                embed=GameEmbeds.error_embed("Le pays est déjà verrouillé."),
+                ephemeral=True
+            )
+            return
+        
+        success = await db.lock_country(self.country['id'])
+        if success:
+            embed = discord.Embed(
+                title="🔒 Pays Verrouillé",
+                description=f"Le pays {self.country['name']} est maintenant verrouillé.",
+                color=0xff9900
+            )
+            embed.add_field(
+                name="Effet",
+                value="Les nouveaux joueurs ne peuvent plus rejoindre ce pays.",
+                inline=False
+            )
+        else:
+            embed = GameEmbeds.error_embed("Erreur lors du verrouillage du pays.")
+        
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        self.stop()
+    
+    @discord.ui.button(label="🔓 Déverrouiller", style=discord.ButtonStyle.success)
+    async def unlock_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.user.id:
+            await interaction.response.send_message(
+                embed=GameEmbeds.error_embed("Ce menu ne vous appartient pas."),
+                ephemeral=True
+            )
+            return
+        
+        if not self.country.get('is_locked', False):
+            await interaction.response.send_message(
+                embed=GameEmbeds.error_embed("Le pays n'est pas verrouillé."),
+                ephemeral=True
+            )
+            return
+        
+        success = await db.unlock_country(self.country['id'])
+        if success:
+            embed = discord.Embed(
+                title="🔓 Pays Déverrouillé",
+                description=f"Le pays {self.country['name']} est maintenant ouvert.",
+                color=0x00ff00
+            )
+            embed.add_field(
+                name="Effet",
+                value="Les nouveaux joueurs peuvent maintenant rejoindre ce pays.",
+                inline=False
+            )
+        else:
+            embed = GameEmbeds.error_embed("Erreur lors du déverrouillage du pays.")
+        
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        self.stop()
 
 async def setup(bot):
     await bot.add_cog(CountryCog(bot))

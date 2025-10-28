@@ -294,27 +294,49 @@ class MilitaryCog(commands.Cog):
         spy_success = random.random() < 0.7  # 70% de chance de succès
         
         if spy_success:
-            # Révéler des informations partielles
-            target_resources = target_country_data.get('resources', {})
+            # NOUVEAU : Vol de ressources !
+            target_resources = target_country_data.get('resources', {}).copy()
+            stolen_resources = {}
             
+            # Voler 5-10% de chaque ressource
+            for res_type, amount in target_resources.items():
+                if amount > 0:
+                    steal_percent = random.uniform(0.05, 0.10)  # 5-10%
+                    stolen_amount = int(amount * steal_percent)
+                    stolen_resources[res_type] = stolen_amount
+                    # Retirer au pays cible
+                    target_resources[res_type] = max(0, amount - stolen_amount)
+            
+            # Appliquer …
+            await db.update_country(target_country_data['id'], {'resources': target_resources})
+            
+            # … et ajouter au pays espion
+            spy_resources_final = spy_country.get('resources', {}).copy()
+            for res_type, amount in stolen_resources.items():
+                spy_resources_final[res_type] = spy_resources_final.get(res_type, 0) + amount
+            await db.update_country(spy_country['id'], {'resources': spy_resources_final})
+            
+            # Créer l'embed de succès
             embed = discord.Embed(
                 title="🕵️ Mission d'Espionnage Réussie",
-                description=f"Informations sur {target_country}",
+                description=f"Informations volées de {target_country}",
                 color=0x00ff00
             )
             
-            # Révéler 3 ressources aléatoires
-            revealed_resources = random.sample(list(target_resources.keys()), min(3, len(target_resources)))
+            # Afficher les ressources volées
+            stolen_text = ""
+            for res_type, amount in stolen_resources.items():
+                if amount > 0:
+                    resource_info = GAME_CONFIG['resources'].get(res_type, {})
+                    stolen_text += f"{resource_info.get('emoji', '📦')} {amount:,}\n"
             
-            for resource in revealed_resources:
-                amount = target_resources[resource]
-                resource_info = GAME_CONFIG['resources'].get(resource, {})
-                embed.add_field(
-                    name=resource_info.get('name', resource),
-                    value=f"{amount:,} {resource_info.get('emoji', '📦')}",
-                    inline=True
-                )
+            embed.add_field(
+                name="💰 Ressources Volées",
+                value=stolen_text or "Aucune",
+                inline=False
+            )
             
+            # Révéler informations
             embed.add_field(
                 name="⚔️ Force Militaire",
                 value=f"{target_country_data.get('army_strength', 0)}/100",
@@ -331,6 +353,12 @@ class MilitaryCog(commands.Cog):
                 inline=True
             )
         else:
+            # Échec : malus au pays espion
+            penalty = 200
+            spy_resources_penalty = spy_country.get('resources', {}).copy()
+            spy_resources_penalty['money'] = max(0, spy_resources_penalty.get('money', 0) - penalty)
+            await db.update_country(spy_country['id'], {'resources': spy_resources_penalty})
+            
             embed = discord.Embed(
                 title="🕵️ Mission d'Espionnage Échouée",
                 description="Vos espions ont été découverts !",
@@ -339,6 +367,11 @@ class MilitaryCog(commands.Cog):
             embed.add_field(
                 name="Coût",
                 value=f"{spy_cost:,} 💵",
+                inline=True
+            )
+            embed.add_field(
+                name="Pénalité",
+                value=f"-{penalty} 💵",
                 inline=True
             )
         
