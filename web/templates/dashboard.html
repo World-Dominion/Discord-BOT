@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - World Dominion Admin{% endblock %}
+
+{% block content %}
+<div class="loading">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Chargement...</span>
+    </div>
+    <p class="mt-2">Chargement des données...</p>
+</div>
+
+<!-- Dashboard Overview -->
+<div id="dashboard" class="section">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+        <button class="btn btn-primary" onclick="requestUpdate()">
+            <i class="fas fa-sync-alt"></i> Actualiser
+        </button>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-flag fa-2x mb-2"></i>
+                    <div class="stat-number" id="countries-count">-</div>
+                    <div>Pays</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <div class="stat-number" id="players-count">-</div>
+                    <div>Joueurs</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-sword fa-2x mb-2"></i>
+                    <div class="stat-number" id="wars-count">-</div>
+                    <div>Guerres Actives</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-2x mb-2"></i>
+                    <div class="stat-number" id="total-economy">-</div>
+                    <div>Économie Totale</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-pie"></i> Répartition des Rôles</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="rolesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar"></i> Top 5 Économies</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="economyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-clock"></i> Activité Récente</h5>
+                </div>
+                <div class="card-body">
+                    <div id="recent-activity">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> Chargement...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Alertes</h5>
+                </div>
+                <div class="card-body">
+                    <div id="alerts">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> Chargement...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Countries Management -->
+<div id="countries" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-flag"></i> Gestion des Pays</h1>
+        <button class="btn btn-success" onclick="showCreateCountryModal()">
+            <i class="fas fa-plus"></i> Créer un Pays
+        </button>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Leader</th>
+                            <th>Population</th>
+                            <th>Économie</th>
+                            <th>Armée</th>
+                            <th>Stabilité</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="countries-table">
+                        <tr>
+                            <td colspan="8" class="text-center">
+                                <i class="fas fa-spinner fa-spin"></i> Chargement...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Players Management -->
+<div id="players" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-users"></i> Gestion des Joueurs</h1>
+        <div>
+            <button class="btn btn-primary" onclick="exportPlayers()">
+                <i class="fas fa-download"></i> Exporter
+            </button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nom d'utilisateur</th>
+                            <th>Pays</th>
+                            <th>Rôle</th>
+                            <th>Argent</th>
+                            <th>Rejoint le</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="players-table">
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <i class="fas fa-spinner fa-spin"></i> Chargement...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Wars Management -->
+<div id="wars" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-sword"></i> Gestion des Guerres</h1>
+        <button class="btn btn-danger" onclick="endAllWars()">
+            <i class="fas fa-stop"></i> Terminer Toutes les Guerres
+        </button>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Attaquant</th>
+                            <th>Défenseur</th>
+                            <th>Début</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wars-table">
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <i class="fas fa-spinner fa-spin"></i> Chargement...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Events Management -->
+<div id="events" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-calendar-alt"></i> Gestion des Événements</h1>
+        <button class="btn btn-warning" onclick="triggerRandomEvent()">
+            <i class="fas fa-bolt"></i> Déclencher un Événement
+        </button>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Pays Cible</th>
+                            <th>Date</th>
+                            <th>Impact</th>
+                        </tr>
+                    </thead>
+                    <tbody id="events-table">
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <i class="fas fa-spinner fa-spin"></i> Chargement...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div id="statistics" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-chart-bar"></i> Statistiques Détaillées</h1>
+        <button class="btn btn-primary" onclick="generateReport()">
+            <i class="fas fa-file-pdf"></i> Générer Rapport
+        </button>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> Évolution des Statistiques</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="statisticsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tools -->
+<div id="tools" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-tools"></i> Outils d'Administration</h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-database"></i> Base de Données</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-warning w-100 mb-2" onclick="resetAllResources()">
+                        <i class="fas fa-undo"></i> Réinitialiser Toutes les Ressources
+                    </button>
+                    <button class="btn btn-danger w-100 mb-2" onclick="resetAllStats()">
+                        <i class="fas fa-chart-line"></i> Réinitialiser Toutes les Statistiques
+                    </button>
+                    <button class="btn btn-info w-100" onclick="backupDatabase()">
+                        <i class="fas fa-save"></i> Sauvegarder la Base de Données
+                    </button>
+                    <button class="btn btn-secondary w-100 mt-2" onclick="openGiveModal()">
+                        <i class="fas fa-gift"></i> Donner (Admin)
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-users-cog"></i> Gestion des Joueurs</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary w-100 mb-2" onclick="promoteAllCitizens()">
+                        <i class="fas fa-arrow-up"></i> Promouvoir Tous les Citoyens
+                    </button>
+                    <button class="btn btn-success w-100 mb-2" onclick="giveAllMoney()">
+                        <i class="fas fa-coins"></i> Donner de l'Argent à Tous
+                    </button>
+                    <button class="btn btn-warning w-100" onclick="resetAllPlayers()">
+                        <i class="fas fa-user-times"></i> Réinitialiser Tous les Joueurs
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-cog"></i> Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-info w-100 mb-2" onclick="showConfigModal()">
+                        <i class="fas fa-cog"></i> Configuration du Jeu
+                    </button>
+                    <button class="btn btn-secondary w-100 mb-2" onclick="viewLogs()">
+                        <i class="fas fa-file-alt"></i> Voir les Logs
+                    </button>
+                    <button class="btn btn-dark w-100" onclick="restartBot()">
+                        <i class="fas fa-power-off"></i> Redémarrer le Bot
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transactions Audit -->
+<div id="transactions" class="section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-list"></i> Transactions</h1>
+        <div class="d-flex gap-2">
+            <select id="txType" class="form-select form-select-sm">
+                <option value="">Tous</option>
+                <option value="work">Travail</option>
+                <option value="produce">Production</option>
+                <option value="trade">Commerce</option>
+                <option value="tick">Tick</option>
+            </select>
+            <input id="txCountry" class="form-control form-control-sm" placeholder="country_id">
+            <input id="txPlayer" class="form-control form-control-sm" placeholder="player_id">
+            <button class="btn btn-primary btn-sm" onclick="loadTransactions()"><i class="fas fa-search"></i> Filtrer</button>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Pays</th>
+                            <th>Joueur</th>
+                            <th>Détails</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-table">
+                        <tr>
+                            <td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> Chargement...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="mt-2 text-end">
+        <button class="btn btn-secondary btn-sm" onclick="exportTransactions()"><i class="fas fa-download"></i> Exporter</button>
+    </div>
+    
+</div>
+<!-- Modals -->
+<!-- Create Country Modal -->
+<div class="modal fade" id="createCountryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Créer un Nouveau Pays</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createCountryForm">
+                    <div class="mb-3">
+                        <label for="countryName" class="form-label">Nom du Pays</label>
+                        <input type="text" class="form-control" id="countryName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="countryPopulation" class="form-label">Population Initiale</label>
+                        <input type="number" class="form-control" id="countryPopulation" value="1000000">
+                    </div>
+                    <div class="mb-3">
+                        <label for="countryEconomy" class="form-label">Économie Initiale</label>
+                        <input type="number" class="form-control" id="countryEconomy" value="50" min="0" max="100">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" onclick="createCountry()">Créer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Country Modal -->
+<div class="modal fade" id="editCountryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modifier le Pays</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCountryForm">
+                    <input type="hidden" id="editCountryId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCountryName" class="form-label">Nom</label>
+                                <input type="text" class="form-control" id="editCountryName">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editCountryPopulation" class="form-label">Population</label>
+                                <input type="number" class="form-control" id="editCountryPopulation">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editCountryEconomy" class="form-label">Économie</label>
+                                <input type="number" class="form-control" id="editCountryEconomy" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCountryArmy" class="form-label">Force Militaire</label>
+                                <input type="number" class="form-control" id="editCountryArmy" min="0" max="100">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editCountryStability" class="form-label">Stabilité</label>
+                                <input type="number" class="form-control" id="editCountryStability" min="0" max="100">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="editCountryLocked">
+                                    <label class="form-check-label" for="editCountryLocked">
+                                        Pays Verrouillé
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>Ressources</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editCountryMoney" class="form-label">Argent</label>
+                                <input type="number" class="form-control" id="editCountryMoney">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editCountryFood" class="form-label">Nourriture</label>
+                                <input type="number" class="form-control" id="editCountryFood">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editCountryMetal" class="form-label">Métal</label>
+                                <input type="number" class="form-control" id="editCountryMetal">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editCountryOil" class="form-label">Pétrole</label>
+                                <input type="number" class="form-control" id="editCountryOil">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editCountryEnergy" class="form-label">Énergie</label>
+                                <input type="number" class="form-control" id="editCountryEnergy">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editCountryMaterials" class="form-label">Matériaux</label>
+                                <input type="number" class="form-control" id="editCountryMaterials">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="saveCountry()">Sauvegarder</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}{% endblock %}
