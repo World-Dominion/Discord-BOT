@@ -228,7 +228,8 @@ class MilitaryCog(commands.Cog):
             attacker_army = max(0, attacker_country.get('army_strength', 0) - damage // 2)
             attacker_stability = max(0, attacker_country.get('stability', 0) - damage)
             attacker_economy = max(0, attacker_country.get('economy', 0) - damage // 3)
- SEO            await db.update_country(attacker_country['id'], {
+            
+            await db.update_country(attacker_country['id'], {
                 'resources': attacker_resources,
                 'population': attacker_population,
                 'army_strength': attacker_army,
