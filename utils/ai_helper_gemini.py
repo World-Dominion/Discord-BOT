@@ -277,6 +277,77 @@ Réponds UNIQUEMENT avec le récit, sans introduction.
         print(f"Erreur génération événement: {e}")
         return f"Un événement de type {event_type} a frappé le pays."
 
+def calculate_war_damages(attacker_country: Dict[str, Any], defender_country: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Calcule les dégâts de guerre avec l'IA basés sur les missiles et stratégie
+    
+    Returns:
+        Dict avec damage_percentage, prendas, lauréats, gold_stolen, resources_stolen
+    """
+    try:
+        model = get_model()
+        
+        prompt = f"""
+{SYSTEM_PROMPT}
+
+## CALCUL DE DÉGÂTS DE GUERRE
+
+Attaquant : {attacker_country.get('name')} (Force: {attacker_country.get('army_strength', 0)}/100, Éco: {attacker_country.get('economy', 0)}/100)
+Défenseur : {defender_country.get('name')} (Force: {defender_country.get('army_strength', 0)}/100, Éco: {defender_count存在ry.get('economy', 0)}/100)
+
+Calcule les dégâts de l'attaque de missiles. Format JSON :
+{{
+  "winner": "attacker|defender",
+  "damage_percentage": nombre_0-40,
+  "population_loss": nombre,
+  "gold_stolen": nombre_30-45_pourcent_des_pertes,
+  "resources_stolen": {{
+    "money": nombre,
+    "food": nombre,
+    "metal": nombre
+  }},
+  "narrative": "Description de l'attaque en missiles (1 phrase)"
+}}
+
+Règles :
+- winner selon force militaire + chance aléatoire
+- damage_percentage: 0-40% selon différence de force
+- population_loss: 0-100000 selon dégâts
+- gold_stolen: 30-45% des pertes du perdant
+- resources_stolen: proportionnel aux ressources du perdant
+
+Réponds UNIQUEMENT JSON.
+"""
+        
+        response = model.generate_content(prompt)
+        response_text = response.text.strip()
+        
+        if "```json" in response_text:
+            response_text = response_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in response_text:
+            response_text = response_text.split("```")[1].split("```")[0].strip()
+        
+        return json.loads(response_text)
+        
+    except Exception as e:
+        print(f"Erreur calcul dégâts guerre: {e}")
+        # Fallback
+        import random
+        damage = random.randint(5, 25)
+        if attacker_country.get('army_strength', 0) > defender_country.get('army_strength', 0):
+            winner = "attacker"
+        else:
+            winner = "defender"
+        
+        return {
+            'winner': winner,
+            'damage_percentage': damage,
+            'population_loss': damage * 1000,
+            'gold_stolen': random.randint(1000, 5000),
+            'resources_stolen': {'money': 1000, 'food': 100, 'metal': 50},
+            'narrative': "Missiles lancés, combats intenses."
+        }
+
 def generate_discovery_idea() -> Dict[str, Any]:
     """Génère une idée de découverte aléatoire"""
     try:

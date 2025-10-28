@@ -178,28 +178,73 @@ class MilitaryCog(commands.Cog):
         attacker_resources['money'] -= war_cost
         await db.update_country(attacker_country['id'], {'resources': attacker_resources})
         
-        # Calculer le résultat de la guerre
-        war_result = GameHelpers.calculate_war_result(attacker_country, defender_country)
+        # NOUVEAU : Calculer avec l'IA les dégâts de guerre (missiles)
+        from utils.ai_helper_gemini import calculate_war_damages
+        war_result = calculate_war_damages(attacker_country, defender_country)
         
-        # Appliquer les dégâts
+        # Appliquer les dégâts selon le gagnant
         if war_result['winner'] == 'attacker':
-            # Attaquant gagne
-            defender_damage = GameHelpers.apply_war_damage(defender_country, war_result['damage'])
-            await db.update_country(defender_country['id'], defender_damage)
+            # Attaquant gagne - NOUVEAU SYSTÈME
+            defender_resources = defender_country.get('resources', {}).copy()
+            defender_population = defender_country.get('population', 0)
             
-            # Récompense pour l'attaquant
-            attacker_resources['money'] += war_result['damage'] * 50
+            damage = war_result['damage_percentage']
+            defender_population = max(0, defender_population - war_result['population_loss'])
+            defender_resources['money'] = max(0, defender_resources.get('money', 0) - war_result['gold_stolen'])
+            defender_resources['food'] = max(0, defender_resources.get('food', 0) - war_result['resources_stolen'].get('food', 0))
+            defender_resources['metal'] = max(0, defender_resources.get('metal', 0) - war_result['resources_stolen'].get('metal', 0))
+            
+            defender_army = max(0, defender_country.get('army_strength', 0) - damage // 2)
+            defender_stability = max(0, defender_country.get('stability', 0) - damage)
+            defender_economy = max(0, defender_country.get('economy', 0) - damage // 3)
+            
+            await db.update_country(defender_country['id'], {
+                'resources': defender_resources,
+                'population': defender_population,
+                'army_strength': defender_army,
+                'stability': defender_stability,
+                'economy': defender_economy
+            })
+            
+            attacker_resources['money'] += war_result['gold_stolen']
+            attacker_resources['food'] += war_result['resources_stolen'].get('food', 0)
+            attacker_resources['metal'] += war_result['resources_stolen'].get('metal', 0)
             await db.update_country(attacker_country['id'], {'resources': attacker_resources})
             
             winner_name = attacker_country['name']
             loser_name = defender_country['name']
+            gold_stolen = war_result['gold_stolen']
         else:
             # Défenseur gagne
-            attacker_damage = GameHelpers.apply_war_damage(attacker_country, war_result['damage'])
-            await db.update_country(attacker_country['id'], attacker_damage)
+            attacker_resources = attacker_country.get('resources', {}).copy()
+            attacker_population = attacker_country.get('population', 0)
+            
+            damage = war_result['damage_percentage']
+            attacker_population = max(0, attacker_population - war_result['population_loss'])
+            attacker_resources['money'] = max(0, attacker_resources.get('money', 0) - war_result['gold_stolen'])
+            attacker_resources['food'] = max(0, attacker_resources.get('food', 0) - war_result['resources_stolen'].get('food', 0))
+            attacker_resources['metal'] = max(0, attacker_resources.get('metal', 0) - war_result['resources_stolen'].get('metal', 0))
+            
+            attacker_army = max(0, attacker_country.get('army_strength', 0) - damage // 2)
+            attacker_stability = max(0, attacker_country.get('stability', 0) - damage)
+            attacker_economy = max(0, attacker_country.get('economy', 0) - damage // 3)
+ SEO            await db.update_country(attacker_country['id'], {
+                'resources': attacker_resources,
+                'population': attacker_population,
+                'army_strength': attacker_army,
+                'stability': attacker_stability,
+                'economy': attacker_economy
+            })
+            
+            defender_resources = defender_country.get('resources', {}).copy()
+            defender_resources['money'] += war_result['gold_stolen']
+            defender_resources['food'] += war_result['resources_stolen'].get('food', 0)
+            defender_resources['metal'] += war_result['resources_stolen'].get('metal', 0)
+            await db.update_country(defender_country['id'], {'resources': defender_resources})
             
             winner_name = defender_country['name']
             loser_name = attacker_country['name']
+            gold_stolen = war_result['gold_stolen']
         
         # Mettre à jour la guerre avec le résultat
         await db.supabase.table('wars').update({
@@ -209,8 +254,8 @@ class MilitaryCog(commands.Cog):
         }).eq('id', war['id']).execute()
         
         embed = discord.Embed(
-            title="⚔️ Guerre Terminée",
-            description=f"La guerre entre {attacker_country['name']} et {defender_country['name']} est terminée !",
+            title="🚀 Guerre aux Missiles Terminée",
+            description=war_result.get('narrative', f"Missiles lancés entre {attacker_country['name']} et {defender_country['name']}"),
             color=0xff0000
         )
         embed.add_field(
@@ -220,18 +265,23 @@ class MilitaryCog(commands.Cog):
         )
         embed.add_field(
             name="💥 Dégâts",
-            value=f"{war_result['damage']}%",
+            value=f"{war_result['damage_percentage']}%",
             inline=True
         )
         embed.add_field(
-            name="⚔️ Force Attaquant",
-            value=f"{war_result['attacker_power']}",
+            name="👥 Population perdue",
+            value=f"{war_result['population_loss']:,}",
             inline=True
         )
         embed.add_field(
-            name="🛡️ Force Défenseur",
-            value=f"{war_result['defender_power']}",
+            name="💰 Or volé",
+            value=f"{gold_stolen:,} 💵",
             inline=True
+        )
+        embed.add_field(
+            name="📦 Ressources volées",
+            value=f"🍞 {war_result['resources_stolen'].get('food', 0)} | ⚒️ {war_result['resources_stolen'].get('metal', 0)}",
+            inline=False
         )
         
         await interaction.response.send_message(embed=embed)
