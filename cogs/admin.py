@@ -10,7 +10,7 @@ import asyncio
 class AdminCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    def is_admin(self, interaction: discord.Interaction) -> bool:
+    async def is_admin(self, interaction: discord.Interaction) -> bool:
         # Vérifier les rôles admin (Discord roles ou rôle jeu Fondateur/Haut Conseil)
         if interaction.guild and ADMIN_ROLE_IDS:
             user_roles = [role.id for role in interaction.user.roles]
@@ -18,7 +18,7 @@ class AdminCog(commands.Cog):
                 return True
         # Vérifier rôle jeu (Fondateur ou Haut Conseil autorisé à agir comme admin)
         try:
-            player = asyncio.get_event_loop().run_until_complete(db.get_player(str(interaction.user.id)))
+            player = await db.get_player(str(interaction.user.id))
             if player and player.get('role') in ['founder', 'high_council']:
                 return True
         except:

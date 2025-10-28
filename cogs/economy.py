@@ -446,7 +446,7 @@ class EconomyCog(commands.Cog):
         # On lit le total du jour via transactions
         totals = await db.get_daily_totals(player_id=player.get('id'))
         daily_work = totals.get('work', 0)
-        daily_cap = rules.get('work_daily_cap', 20000)
+        daily_cap = GAME_CONFIG.get('economy_rules', {}).get('work_daily_cap', 20000)
         if daily_work + salary > daily_cap:
             await interaction.response.send_message(
                 embed=GameEmbeds.error_embed("Cap quotidien de travail atteint."),

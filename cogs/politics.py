@@ -155,45 +155,50 @@ class PoliticsCog(commands.Cog):
         
         message = await interaction.response.send_message(embed=embed, view=view)
         
-        # Programmer la fin de l'élection
-        await asyncio.sleep(300)  # 5 minutes
-        
-        # Récupérer les résultats
-        votes = view.get_votes()
-        if votes['yes'] > votes['no']:
-            # Le candidat gagne
-            await db.update_player(str(candidate.id), {'role': 'chief'})
-            await db.update_player(str(country['leader_id']), {'role': 'vice_chief'})
-            await db.update_country(country['id'], {'leader_id': candidate.id})
+        # Programmer la fin de l'élection dans une tâche en arrière-plan
+        async def end_election():
+            await asyncio.sleep(300)  # 5 minutes
             
-            embed = discord.Embed(
-                title="🎉 Élection Terminée",
-                description=f"{candidate.mention} est le nouveau Chef d'État de {country['name']} !",
-                color=0x00ff00
+            # Récupérer les résultats
+            votes = view.get_votes()
+            if votes['yes'] > votes['no']:
+                # Le candidat gagne
+                await db.update_player(str(candidate.id), {'role': 'chief'})
+                if country.get('leader_id'):
+                    await db.update_player(str(country['leader_id']), {'role': 'vice_chief'})
+                await db.update_country(country['id'], {'leader_id': candidate_player['id']})
+                
+                embed = discord.Embed(
+                    title="🎉 Élection Terminée",
+                    description=f"{candidate.mention} est le nouveau Chef d'État de {country['name']} !",
+                    color=0x00ff00
+                )
+            else:
+                embed = discord.Embed(
+                    title="❌ Élection Terminée",
+                    description=f"{candidate.mention} n'a pas été élu Chef d'État.",
+                    color=0xff0000
+                )
+            
+            embed.add_field(
+                name="Votes pour",
+                value=f"{votes['yes']} ✅",
+                inline=True
             )
-        else:
-            embed = discord.Embed(
-                title="❌ Élection Terminée",
-                description=f"{candidate.mention} n'a pas été élu Chef d'État.",
-                color=0xff0000
+            embed.add_field(
+                name="Votes contre",
+                value=f"{votes['no']} ❌",
+                inline=True
             )
+            
+            # Mettre à jour le message
+            try:
+                await interaction.edit_original_response(embed=embed, view=None)
+            except:
+                pass
         
-        embed.add_field(
-            name="Votes pour",
-            value=f"{votes['yes']} ✅",
-            inline=True
-        )
-        embed.add_field(
-            name="Votes contre",
-            value=f"{votes['no']} ❌",
-            inline=True
-        )
-        
-        # Mettre à jour le message
-        try:
-            await interaction.edit_original_response(embed=embed, view=None)
-        except:
-            pass
+        # Démarrer la tâche en arrière-plan
+        asyncio.create_task(end_election())
     
     @app_commands.command(name="vote", description="Voter lors d'une élection")
     @app_commands.describe(choice="Votre choix")

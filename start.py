@@ -12,6 +12,11 @@ import asyncio
 from dotenv import load_dotenv
 
 load_dotenv()
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
 
 def check_env():
     required_vars = [
@@ -70,6 +75,36 @@ async def start_bot_async():
             print(f"📊 Connecté à {len(self.guilds)} serveur(s)")
             activity = discord.Activity(type=discord.ActivityType.playing, name="World Dominion - Stratégie Mondiale")
             await self.change_presence(activity=activity)
+        async def on_command_error(self, ctx, error):
+            from discord.ext import commands as _commands
+            if isinstance(error, _commands.CommandNotFound):
+                return
+            print(f"❌ Erreur de commande: {error}")
+            try:
+                import discord as _discord
+                embed = _discord.Embed(
+                    title="❌ Erreur",
+                    description="Une erreur est survenue lors de l'exécution de la commande.",
+                    color=0xff0000
+                )
+                await ctx.send(embed=embed, ephemeral=True)
+            except Exception:
+                pass
+        async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+            print(f"❌ Erreur de commande slash: {error}")
+            try:
+                import discord as _discord
+                embed = _discord.Embed(
+                    title="❌ Erreur",
+                    description="Une erreur est survenue lors de l'exécution de la commande.",
+                    color=0xff0000
+                )
+                if interaction.response.is_done():
+                    await interaction.followup.send(embed=embed, ephemeral=True)
+                else:
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+            except Exception:
+                pass
 
     if not DISCORD_TOKEN:
         print("❌ Token Discord manquant ! Vérifiez votre fichier .env")
@@ -83,7 +118,35 @@ async def start_bot_async():
         print(f"❌ Erreur lors du démarrage: {e}")
 
 def main():
-    print("🌍 Démarrage World Dominion (Bot + Panel Web) — point d'entrée unique")
+    print("Demarrage World Dominion (Bot + Panel Web) - point d'entree unique")
+    print("📋 Commandes disponibles:")
+    print("   /rejoindre - Rejoindre un pays (menu déroulant)")
+    print("   /pays - Consulter les informations d'un pays")
+    print("   /profil - Consulter votre profil")
+    print("   /classement - Afficher le classement mondial")
+    print("   /lock-pays - Verrouiller/déverrouiller un pays (Chef/Vice-Chef)")
+    print("   /produire - Produire des ressources")
+    print("   /commerce - Échanger avec d'autres pays")
+    print("   /taxe - Fixer les impôts (Chef d'État)")
+    print("   /banque - Consulter le budget national")
+    print("   /travail - Travailler pour gagner de l'argent")
+    print("   /promouvoir - Promouvoir un joueur (Chef d'État)")
+    print("   /élection - Organiser une élection")
+    print("   /armée - Consulter les forces armées")
+    print("   /attaquer - Attaquer un pays (Chef d'État)")
+    print("   /espionner - Espionner un pays")
+    print("   /défendre - Renforcer les défenses")
+    print("   /alliance - Gérer les alliances")
+    print("   /négocier - Négocier avec un pays")
+    print("   /embargo - Mettre un embargo (Chef d'État)")
+    print("   /territoire - Consulter les territoires")
+    print("   /create - Créer un pays (Admin)")
+    print("   /own - Assigner un pays à un joueur (Admin)")
+    print("   /admin-list - Lister tous les pays (Admin)")
+    print("   /delete - Supprimer des éléments d'un pays (Admin)")
+    print("   /events - Consulter les événements récents")
+    print("   /trigger-event - Déclencher un événement (Admin)")
+    print("   /web-panel - Obtenir l'URL du panel web (Admin)")
     check_env()
     # Lancer le web dans un thread
     web_thread = threading.Thread(target=start_web, daemon=True)
