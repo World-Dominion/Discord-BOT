@@ -1,15 +1,21 @@
-// Etat global
+// Etat global avec cache intelligent
 let rolesChart, economyChart, statisticsChart;
 let currentData = { countries: [], players: [], wars: [], events: [] };
+let lastUpdateTime = 0;
+let updateInProgress = false;
+const CACHE_DURATION = 60000; // 1 minute de cache
+const MIN_UPDATE_INTERVAL = 10000; // Minimum 10 secondes entre les mises à jour
 
-// Socket.IO (AMÉLIORÉ)
+// Socket.IO (CONFIGURATION STRICTE POUR RENDER)
 const socket = io({
-  transports: ['polling'], // force long-polling pour compat Render/Werkzeug
-  timeout: 20000,
+  transports: ['polling'], // Force uniquement le polling
+  timeout: 30000,
   reconnection: true,
-  reconnectionDelay: 1000,
-  reconnectionAttempts: 5,
-  maxReconnectionAttempts: 5
+  reconnectionDelay: 2000,
+  reconnectionAttempts: 3,
+  maxReconnectionAttempts: 3,
+  forceNew: true, // Force une nouvelle connexion
+  upgrade: false // Désactive complètement les websockets
 });
 
 socket.on('connect', () => {
@@ -50,10 +56,13 @@ socket.on('reconnect_failed', () => {
 socket.on('data_update', (data) => {
   console.log('📊 Données mises à jour via Socket.IO');
   currentData = data || {};
+  lastUpdateTime = Date.now();
+  updateInProgress = false;
+  
   try { 
     updateDashboard(); 
   } catch (e) { 
-    console.error('❌ Erreur mise à jour dashboard:', e);
+    console.error('ERREUR mise à jour dashboard:', e);
   }
 });
 
@@ -75,9 +84,31 @@ function showAlert(type, message){
 }
 function formatNumber(n){ try { return new Intl.NumberFormat('fr-FR').format(n||0);} catch{ return n; } }
 function formatDate(d){ return d ? new Date(d).toLocaleString('fr-FR') : '-'; }
-function requestUpdate(){ 
-  console.log('🔄 Demande de mise à jour des données');
-  socket.emit('request_update'); 
+function requestUpdate(force = false) {
+  const now = Date.now();
+  
+  // Éviter les mises à jour trop fréquentes
+  if (!force && (updateInProgress || (now - lastUpdateTime) < MIN_UPDATE_INTERVAL)) {
+    console.log('⏭️ Mise à jour ignorée (trop récente ou en cours)');
+    return;
+  }
+  
+  // Vérifier le cache
+  if (!force && (now - lastUpdateTime) < CACHE_DURATION && Object.keys(currentData).length > 0) {
+    console.log('📋 Utilisation du cache (données récentes)');
+    updateDashboard();
+    return;
+  }
+  
+  updateInProgress = true;
+  console.log('🔄 Demande de mise à jour des données...');
+  
+  if (socket.connected) {
+    socket.emit('request_update');
+  } else {
+    console.log('📡 Socket.IO déconnecté, utilisation du fallback REST');
+    restBootstrap();
+  }
 }
 
 // Fallback REST si Socket.IO indisponible
@@ -518,12 +549,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('btn-filter-tx')?.addEventListener('click', loadTransactions);
   document.getElementById('btn-export-tx')?.addEventListener('click', exportTransactions);
   
-  // Auto-refresh toutes les 30 secondes
+  // Auto-refresh optimisé (toutes les 2 minutes au lieu de 30s)
   setInterval(() => {
     if (socket.connected) {
-      requestUpdate();
+      requestUpdate(); // Utilise le cache intelligent
     }
-  }, 30000);
+  }, 120000); // 2 minutes au lieu de 30 secondes
 });
 
 // ==================== COUNTRIES ====================
@@ -1034,7 +1065,7 @@ function restartBot() {
     showAlert('info', 'Fonctionnalité en cours de développement - Contactez l\'administrateur système');
 }
 
-// Don (Admin)
+// Don (Admin) - Fonction améliorée
 function openGiveModal() {
     const targetType = prompt('Cible: player/country/all_players/all_countries', 'player');
     if (!targetType) return;
@@ -1060,4 +1091,116 @@ function openGiveModal() {
         else { showAlert('danger', data.error || 'Erreur lors du don'); }
     })
     .catch(() => showAlert('danger', 'Erreur de connexion'));
+}
+
+// Fonctions manquantes pour les boutons du dashboard
+function resetAllResources() {
+    if (!confirm('Réinitialiser toutes les ressources des pays ? Cette action est irréversible !')) return;
+    
+    fetch('/api/tools/reset-resources', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', `${data.count} pays réinitialisé(s)`);
+            requestUpdate();
+        } else {
+            showAlert('danger', 'Erreur lors de la réinitialisation');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Erreur de connexion');
+    });
+}
+
+function resetAllStats() {
+    if (!confirm('Réinitialiser toutes les statistiques des pays ? Cette action est irréversible !')) return;
+    
+    fetch('/api/tools/reset-stats', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', `${data.count} pays réinitialisé(s)`);
+            requestUpdate();
+        } else {
+            showAlert('danger', 'Erreur lors de la réinitialisation');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Erreur de connexion');
+    });
+}
+
+function backupDatabase() {
+    showAlert('info', 'Sauvegarde en cours...');
+    
+    fetch('/api/tools/backup', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Sauvegarde créée avec succès');
+        } else {
+            showAlert('danger', 'Erreur lors de la sauvegarde');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Erreur de connexion');
+    });
+}
+
+function promoteAllCitizens() {
+    if (!confirm('Promouvoir tous les citoyens en dirigeants ? Cette action est irréversible !')) return;
+    
+    fetch('/api/tools/promote-citizens', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', `${data.count} citoyen(s) promu(s)`);
+            requestUpdate();
+        } else {
+            showAlert('danger', 'Erreur lors de la promotion');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Erreur de connexion');
+    });
+}
+
+function giveAllMoney() {
+    const amount = prompt('Montant à donner à tous les joueurs:', '1000');
+    if (!amount || isNaN(amount)) return;
+    
+    if (!confirm(`Donner ${amount} à tous les joueurs ?`)) return;
+    
+    fetch('/api/tools/give-money', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount: parseInt(amount) })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', `${data.count} joueur(s) ont reçu ${amount}`);
+            requestUpdate();
+        } else {
+            showAlert('danger', 'Erreur lors du don');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Erreur de connexion');
+    });
 }

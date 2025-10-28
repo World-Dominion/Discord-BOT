@@ -8,36 +8,214 @@ import secrets
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('WEB_SECRET_KEY', secrets.token_hex(32))
-# Utiliser threading pour éviter l'erreur Werkzeug en prod (Render) et permettre le fallback polling
+# Socket.IO avec configuration stricte pour Render.com
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode=os.getenv('SOCKETIO_ASYNC_MODE', 'threading'),
+    async_mode='threading',  # Force threading mode
     logger=False,
     engineio_logger=False,
-    allow_upgrades=False  # force long-polling, évite websocket avec Werkzeug
+    allow_upgrades=False,  # Désactive complètement les websockets
+    transports=['polling'],  # Force uniquement le polling
+    ping_timeout=60,
+    ping_interval=25
 )
 
-# Configuration
+# Rate limiting simple avec dictionnaire en mémoire
+from collections import defaultdict
+import time
+
+# Stockage des requêtes par IP
+request_counts = defaultdict(list)
+RATE_LIMIT_WINDOW = 60  # 1 minute
+RATE_LIMIT_MAX_REQUESTS = 100  # 100 requêtes par minute par IP
+
+def check_rate_limit():
+    """Vérifie le rate limiting pour l'IP actuelle"""
+    client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+    if not client_ip:
+        client_ip = '127.0.0.1'
+    
+    now = time.time()
+    
+    # Nettoyer les anciennes requêtes
+    request_counts[client_ip] = [
+        req_time for req_time in request_counts[client_ip] 
+        if now - req_time < RATE_LIMIT_WINDOW
+    ]
+    
+    # Vérifier la limite
+    if len(request_counts[client_ip]) >= RATE_LIMIT_MAX_REQUESTS:
+        return False
+    
+    # Ajouter la requête actuelle
+    request_counts[client_ip].append(now)
+    return True
+
+def rate_limit(f):
+    """Décorateur pour le rate limiting"""
+    def decorated_function(*args, **kwargs):
+        if not check_rate_limit():
+            return jsonify({'error': 'Rate limit exceeded. Please slow down.'}), 429
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
+# Décorateurs pour éliminer la duplication de code
+def require_admin(f):
+    """Décorateur pour vérifier les permissions admin"""
+    def decorated_function(*args, **kwargs):
+        if not is_user_admin():
+            return jsonify({'error': 'Unauthorized'}), 403
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
+def require_database(f):
+    """Décorateur pour vérifier la disponibilité de la base de données"""
+    def decorated_function(*args, **kwargs):
+        if supabase is None:
+            print(f"ERREUR: Supabase non configuré pour {f.__name__}")
+            return jsonify({'error': 'Database not configured'}), 500
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
+def handle_api_errors(f):
+    """Décorateur pour la gestion d'erreurs API"""
+    def decorated_function(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception as e:
+            log_error(f.__name__, e)
+            return jsonify({'error': f'Server error: {str(e)}'}), 500
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
+# Fonction utilitaire pour la gestion d'erreurs
+def log_error(endpoint: str, error: Exception, context: str = ""):
+    """Log détaillé des erreurs avec contexte"""
+    error_type = type(error).__name__
+    error_msg = str(error)
+    context_info = f" - {context}" if context else ""
+    print(f"ERREUR {endpoint}: {error_type}: {error_msg}{context_info}")
+
+def validate_request_data(data: dict, required_fields: list) -> tuple[bool, str]:
+    """Valide les données de requête"""
+    if not data:
+        return False, "Aucune donnée fournie"
+    
+    missing_fields = [field for field in required_fields if field not in data]
+    if missing_fields:
+        return False, f"Champs manquants: {', '.join(missing_fields)}"
+    
+    return True, ""
+
+# Configuration avec validation
 discord_client_id = os.getenv('DISCORD_CLIENT_ID')
 discord_client_secret = os.getenv('DISCORD_CLIENT_SECRET')
 BASE_URL = os.getenv('RENDER_EXTERNAL_URL') or os.getenv('WEB_PANEL_URL') or os.getenv('HOST_IP', 'http://localhost:5000')
 DISCORD_REDIRECT_URI = os.getenv('DISCORD_REDIRECT_URI', BASE_URL + '/callback')
 ADMIN_ROLE_IDS = [int(x) for x in os.getenv('ADMIN_ROLE_IDS', '').split(',') if x.strip()]
 
+# Validation des variables d'environnement critiques
+def validate_environment():
+    """Valide les variables d'environnement critiques"""
+    errors = []
+    warnings = []
+    
+    # Variables critiques pour Discord OAuth
+    if not discord_client_id:
+        errors.append("DISCORD_CLIENT_ID manquant")
+    elif not discord_client_id.isdigit():
+        warnings.append("DISCORD_CLIENT_ID ne semble pas être un ID Discord valide")
+    
+    if not discord_client_secret:
+        errors.append("DISCORD_CLIENT_SECRET manquant")
+    elif len(discord_client_secret) < 32:
+        warnings.append("DISCORD_CLIENT_SECRET semble trop court")
+    
+    if not ADMIN_ROLE_IDS:
+        warnings.append("ADMIN_ROLE_IDS vide - aucun utilisateur ne pourra accéder au panel")
+    
+    # Variables Supabase
+    if not SUPABASE_URL:
+        errors.append("SUPABASE_URL manquant")
+    elif not SUPABASE_URL.startswith('https://'):
+        warnings.append("SUPABASE_URL ne semble pas être une URL HTTPS valide")
+    
+    if not SUPABASE_KEY:
+        errors.append("SUPABASE_KEY manquant")
+    elif len(SUPABASE_KEY) < 100:
+        warnings.append("SUPABASE_KEY semble trop court")
+    
+    # Log des problèmes
+    if errors:
+        print("ERREURS CRITIQUES de configuration:")
+        for error in errors:
+            print(f"  - {error}")
+    
+    if warnings:
+        print("AVERTISSEMENTS de configuration:")
+        for warning in warnings:
+            print(f"  - {warning}")
+    
+    return len(errors) == 0
+
+# Validation au démarrage
+if not validate_environment():
+    print("ATTENTION: Configuration incomplète détectée. Certaines fonctionnalités peuvent ne pas fonctionner.")
+
 LOG_CHANNEL_ID = 1432369899635871894
 
-# Supabase (protégé: si variables manquantes, on désactive proprement)
+# Supabase avec vérification d'initialisation complète
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 supabase: Client = None
-try:
+
+def initialize_database():
+    """Initialise et vérifie la connexion à la base de données"""
+    global supabase
+    
     if not SUPABASE_URL or not SUPABASE_KEY:
-        print("SUPABASE_URL/SUPABASE_KEY manquants - les endpoints DB seront indisponibles")
-    else:
+        print("ERREUR: SUPABASE_URL/SUPABASE_KEY manquants - les endpoints DB seront indisponibles")
+        return False
+    
+    try:
+        print("INFO: Initialisation de la connexion Supabase...")
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-except Exception as e:
-        print(f"Erreur init Supabase: {e}")
+        
+        # Test de connexion avec une requête simple
+        print("INFO: Test de connexion à la base de données...")
+        test_result = supabase.table('countries').select('id').limit(1).execute()
+        print("SUCCESS: Connexion à la base de données établie")
+        
+        # Vérification des tables critiques
+        required_tables = ['countries', 'players', 'wars', 'events']
+        missing_tables = []
+        
+        for table in required_tables:
+            try:
+                supabase.table(table).select('id').limit(1).execute()
+                print(f"SUCCESS: Table '{table}' accessible")
+            except Exception as e:
+                missing_tables.append(table)
+                print(f"WARNING: Table '{table}' inaccessible: {str(e)}")
+        
+        if missing_tables:
+            print(f"ATTENTION: Tables manquantes: {', '.join(missing_tables)}")
+            print("Certaines fonctionnalités peuvent ne pas fonctionner correctement")
+        
+        return True
+        
+    except Exception as e:
+        print(f"ERREUR: Échec de l'initialisation Supabase: {type(e).__name__}: {str(e)}")
+        supabase = None
+        return False
+
+# Initialisation de la base de données
+if not initialize_database():
+    print("ATTENTION: Base de données non initialisée. Le panel web sera limité.")
 
 DISCORD_BOT_TOKEN = os.getenv('DISCORD_TOKEN')
 
@@ -46,7 +224,7 @@ class WebAdminManager:
         self.bot = None
     def is_admin(self, user_data):
         if not user_data or 'guilds' not in user_data:
-            print("❌ Pas de données utilisateur ou guildes")
+            print("ERREUR: Pas de données utilisateur ou guildes")
             return False
         guild_id = str(os.getenv('DISCORD_GUILD_ID'))
         print(f" Recherche dans la guilde: {guild_id}")
@@ -69,14 +247,14 @@ class WebAdminManager:
                             user_roles = member_data.get('roles', [])
                             print(f"✅ Rôles récupérés via API: {len(user_roles)} rôles")
                         else:
-                            print(f"❌ Erreur API: {member_response.status_code}")
+                            print(f"ERREUR API: {member_response.status_code}")
                             if guild.get('permissions'):
                                 permissions = int(guild.get('permissions', '0'))
                                 if permissions & 0x8:
                                     print("✅ Utilisateur a les permissions admin dans la guilde")
                                     return True
                     except Exception as e:
-                        print(f"❌ Erreur lors de la récupération des rôles: {e}")
+                        print(f"ERREUR lors de la récupération des rôles: {e}")
                 user_role_ids = []
                 for role_id in user_roles:
                     try:
@@ -88,7 +266,7 @@ class WebAdminManager:
                 print(f" A un rôle admin: {has_admin_role}")
                 if has_admin_role:
                     return True
-        print("❌ Aucun rôle admin trouvé")
+        print("ERREUR: Aucun rôle admin trouvé")
         return False
 admin_manager = WebAdminManager()
 
@@ -122,16 +300,70 @@ def index():
     
     return render_template('dashboard.html')
 
+@app.route('/api/rate-limit-status')
+def rate_limit_status():
+    """Retourne le statut du rate limiting pour l'IP actuelle"""
+    client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+    if not client_ip:
+        client_ip = '127.0.0.1'
+    
+    now = time.time()
+    
+    # Nettoyer les anciennes requêtes
+    request_counts[client_ip] = [
+        req_time for req_time in request_counts[client_ip] 
+        if now - req_time < RATE_LIMIT_WINDOW
+    ]
+    
+    remaining = max(0, RATE_LIMIT_MAX_REQUESTS - len(request_counts[client_ip]))
+    
+    return jsonify({
+        'ip': client_ip,
+        'requests_used': len(request_counts[client_ip]),
+        'requests_remaining': remaining,
+        'window_seconds': RATE_LIMIT_WINDOW,
+        'max_requests': RATE_LIMIT_MAX_REQUESTS
+    })
+
 # Health check (Render)
 @app.route('/healthz')
 def healthz():
+    """Health check détaillé pour Render.com"""
     try:
+        health_status = {
+            'status': 'healthy',
+            'timestamp': datetime.now().isoformat(),
+            'database': 'connected' if supabase is not None else 'disconnected',
+            'discord_oauth': 'configured' if discord_client_id and discord_client_secret else 'not_configured',
+            'admin_roles': len(ADMIN_ROLE_IDS) if ADMIN_ROLE_IDS else 0
+        }
+        
+        # Test de la base de données si disponible
+        if supabase:
+            try:
+                supabase.table('countries').select('id').limit(1).execute()
+                health_status['database_status'] = 'accessible'
+            except Exception as e:
+                health_status['database_status'] = 'error'
+                health_status['database_error'] = str(e)
+                health_status['status'] = 'degraded'
+        
+        # Déterminer le code de statut HTTP
+        status_code = 200
+        if health_status['status'] == 'degraded':
+            status_code = 503
+        elif not supabase or not discord_client_id:
+            health_status['status'] = 'unhealthy'
+            status_code = 503
+        
+        return jsonify(health_status), status_code
+        
+    except Exception as e:
         return jsonify({
-            'status': 'ok',
-            'db': 'up' if supabase is not None else 'down'
-        })
-    except Exception:
-        return jsonify({'status': 'degraded'}), 200
+            'status': 'error',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
 
 @app.route('/login')
 def login():
@@ -145,7 +377,7 @@ def login():
 def callback():
     code = request.args.get('code')
     if not code:
-        print("❌ Pas de code OAuth fourni")
+        print("ERREUR: Pas de code OAuth fourni")
         return redirect(url_for('login'))
     
     data = {
@@ -194,7 +426,7 @@ def callback():
                         guild['roles'] = member_data.get('roles', [])
                         print(f"✅ Rôles récupérés: {len(guild['roles'])} rôles")
                     else:
-                        print(f"❌ Erreur récupération rôles: {member_response.status_code}")
+                        print(f"ERREUR récupération rôles: {member_response.status_code}")
                         print(f"� Réponse: {member_response.text[:200]}")
                         guild['roles'] = []
             
@@ -218,12 +450,12 @@ def callback():
                 print("✅ Redirection vers le dashboard")
                 return redirect(url_for('index'))
             else:
-                print("❌ Accès refusé - pas admin")
+                print("ERREUR: Accès refusé - pas admin")
                 return render_template('unauthorized.html')
         else:
-            print(f"❌ Erreur récupération données: User {user_response.status_code}, Guilds {guilds_response.status_code}")
+            print(f"ERREUR récupération données: User {user_response.status_code}, Guilds {guilds_response.status_code}")
     
-    print("❌ Erreur OAuth")
+    print("ERREUR OAuth")
     return redirect(url_for('login'))
 
 @app.route('/logout')
@@ -233,41 +465,46 @@ def logout():
 
 # API Routes - Countries
 @app.route('/api/countries')
+@rate_limit
+@require_admin
+@require_database
+@handle_api_errors
 def api_countries():
-    if not is_user_admin():
-        return jsonify({'error': 'Unauthorized'}), 403
+    """Récupérer tous les pays"""
+    print("INFO: Récupération de tous les pays...")
+    result = supabase.table('countries').select('*').execute()
     
-    try:
-        if supabase is None:
-            return jsonify({'error': 'Database not configured'}), 500
-        result = supabase.table('countries').select('*').execute()
-        return jsonify(result.data)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    if result.data is None:
+        print("WARNING: Aucun pays trouvé dans la base de données")
+        return jsonify([])
+    
+    print(f"SUCCESS: {len(result.data)} pays récupérés")
+    return jsonify(result.data)
 
 @app.route('/api/countries', methods=['POST'])
+@rate_limit
+@require_admin
+@require_database
+@handle_api_errors
 def api_create_country():
     """Créer un nouveau pays"""
-    if not is_user_admin():
-        return jsonify({'error': 'Unauthorized'}), 403
+    data = request.json
+    if not data:
+        print("ERREUR: Aucune donnée fournie pour la création de pays")
+        return jsonify({'error': 'No data provided'}), 400
     
-    try:
-        if supabase is None:
-            return jsonify({'error': 'Database not configured'}), 500
-        data = request.json
-        result = supabase.table('countries').insert(data).execute()
-        
-        if result.data:
-            country = result.data[0]
-            username, user_id = get_user_info()
-            log_country_created(country, username, user_id)
-            return jsonify({'success': True, 'data': result.data})
-        
-        return jsonify({'error': 'Failed to create country'}), 500
+    print(f"INFO: Création d'un nouveau pays: {data.get('name', 'N/A')}")
+    result = supabase.table('countries').insert(data).execute()
     
-    except Exception as e:
-        print(f"❌ Erreur création pays: {e}")
-        return jsonify({'error': str(e)}), 500
+    if result.data:
+        country = result.data[0]
+        username, user_id = get_user_info()
+        log_country_created(country, username, user_id)
+        print(f"SUCCESS: Pays créé avec ID {country.get('id', 'N/A')}")
+        return jsonify({'success': True, 'data': result.data})
+    
+    print("ERREUR: Échec de la création du pays - pas de données retournées")
+    return jsonify({'error': 'Failed to create country'}), 500
 
 @app.route('/api/countries/<country_id>', methods=['GET', 'PUT', 'DELETE'])
 def api_country(country_id):
@@ -495,9 +732,11 @@ def api_trigger_event():
         
         # Validation minimale
         if not isinstance(data, dict) or 'type' not in data:
+            print(f"ERREUR Validation échouée: data={data}")
             return jsonify({'error': 'Invalid payload'}), 400
 
         # Insérer
+        print(f"📝 Insertion événement: {data}")
         result = supabase.table('events').insert(data).execute()
         
         if result.data:
@@ -505,6 +744,7 @@ def api_trigger_event():
             log_event_triggered(data, username, user_id)
             return jsonify({'success': True, 'data': result.data})
         
+        print(f"ERREUR Insertion échouée: {result}")
         return jsonify({'error': 'Failed to trigger event'}), 500
     
     except Exception as e:

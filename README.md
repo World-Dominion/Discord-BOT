@@ -1,238 +1,178 @@
-# 🌍 World Dominion - Bot Discord de Stratégie
+# 🌍 World Dominion — Discord Bot de Stratégie & Panel Web Ultime
 
-Bot Discord multijoueur de stratégie, économie et politique mondiale. Chaque joueur dirige un pays et doit équilibrer économie, politique et guerre pour dominer le monde.
+Bot Discord multijoueur où chaque joueur dirige un pays : gestion avancée de l’économie, de la politique, des guerres, alliances, le tout piloté par un panel web admin moderne et sécurisé.
+
+---
 
 ## 🎯 Fonctionnalités Principales
 
-### 🏛️ Système Politique
-- **8 niveaux hiérarchiques** : De Recrue à Chef d'État
-- **Élections et coups d'État** : Démocratie et autoritarisme
-- **Promotions** : Évolution selon l'expérience et la loyauté
+### 🏛️ Politique
+- **8 niveaux hiérarchiques** — Recrue à Chef d’État
+- **Élections & coups d’État** — Gouvernance dynamique
+- **Promotions** — Progression selon expérience & influence
 
-### 💰 Économie Complexe
-- **6 ressources** : Argent, Nourriture, Métal, Pétrole, Énergie, Matériaux
-- **Production et commerce** : Système d'échange entre pays
-- **Impôts et budget** : Gestion financière nationale
+### 💰 Économie
+- **6 ressources** — Argent, Nourriture, Métal, Pétrole, Énergie, Matériaux
+- **Production, commerce, impôts** — Moteur économique avancé
+- **Gestion du budget national et individuel**
 
-### ⚔️ Système Militaire
-- **5 types d'unités** : Soldats, Blindés, Avions, Missiles, Flotte
-- **Guerres et espionnage** : Conflits stratégiques
-- **Territoires** : Expansion et défense
+### ⚔️ Militaire
+- **Cinq types d’unités** — Soldats, Blindés, Avions, Missiles, Flotte
+- **Guerres stratégiques** — Déroulement et résolution réalistes
+- **Espionnage & territoires**
 
 ### 🕊️ Diplomatie
-- **Alliances** : Coopération entre nations
-- **Négociations** : Traités et accords
-- **Embargos** : Guerre économique
+- **Alliances, traités, embargos**
+- **Négociation, coopération, compétition**
+
+---
 
 ## 🚀 Démarrage Rapide
 
-### Option 1 : Démarrage Simple (Recommandé)
-```bash
-python start.py
-```
-Ce script démarre automatiquement le bot Discord ET le panel web d'administration.
-
-### Installation des dépendances
-
-Ce bot et son panel web nécessitent les bibliothèques suivantes :
+### Prérequis & Installation
 
 ```bash
+python start.py               # Démarre Discord Bot & Panel Web
 pip install -r requirements.txt
 ```
 
-Le fichier `requirements.txt` inclus couvre :
-- discord.py (bot Discord)
-- supabase (base de données)
-- python-dotenv (variables d'environnement)
-- Flask et Flask-SocketIO (panel web)
-- requests (autorisation OAuth Discord, API HTTP)
-- gunicorn (optionnel, pour déploiement production Flask)
+### Configuration rapide
 
-Vérifiez que toutes ces dépendances sont installées avant de démarrer !
+- Copiez les variables d’environnement requises dans `.env` :
+  - `DISCORD_TOKEN`, `DISCORD_GUILD_ID`
+  - `SUPABASE_URL`, `SUPABASE_KEY`
+  - `ADMIN_ROLE_IDS`
+  - `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URI`, `WEB_SECRET_KEY`, `WEB_PANEL_URL`
 
-### Option 2 : Démarrage Manuel
+(Exemple fourni en documentation / ci-dessous)
 
-1. **Installer les dépendances** :
-```bash
-pip install -r requirements.txt
-cd web
-pip install -r requirements.txt
-```
+---
 
-2. **Configuration** :
-   - Copier `ENV_EXAMPLE.txt` vers `.env`
-   - Remplir les variables d'environnement
-   - Configurer Supabase
-   - Configurer Discord OAuth pour le panel web
+## 📋 Commandes Discord
 
-3. **Démarrer le bot** :
-```bash
-python main.py
-```
+### Pays
+- `/rejoindre`, `/pays`, `/classement`, `/lock-pays`
 
-4. **Démarrer le panel web** (dans un autre terminal) :
-```bash
-cd web
-python run.py
-```
+### Économie
+- `/produire`, `/commerce`, `/taxe`, `/banque`, `/travail`
 
-## 📋 Commandes Disponibles
+### Politique
+- `/profil`, `/promouvoir`, `/élection`
 
-### 🏳️ Gestion des Pays
-- `/rejoindre` - Rejoindre un pays (menu déroulant)
-- `/pays` - Consulter les informations d'un pays
-- `/classement` - Afficher le classement mondial
-- `/lock-pays` - Verrouiller/déverrouiller un pays (Chef/Vice-Chef)
+### Militaire
+- `/armée`, `/attaquer`, `/espionner`, `/défendre`, `/territoire`
 
-### 💰 Économie
-- `/produire` - Produire des ressources
-- `/commerce` - Échanger avec d'autres pays
-- `/taxe` - Fixer les impôts (Chef d'État)
-- `/banque` - Consulter le budget national
-- `/travail` - Travailler pour gagner de l'argent
+### Diplomatie
+- `/alliance`, `/négocier`, `/embargo`
 
-### 🏛️ Politique
-- `/profil` - Consulter votre profil
-- `/promouvoir` - Promouvoir un joueur (Chef d'État)
-- `/élection` - Organiser une élection
+### Admin & Outils
+- `/create`, `/own`, `/admin-list`, `/delete`, `/web-panel`
 
-### ⚔️ Militaire
-- `/armée` - Consulter les forces armées
-- `/attaquer` - Attaquer un pays (Chef d'État)
-- `/espionner` - Espionner un pays
-- `/défendre` - Renforcer les défenses
-- `/territoire` - Consulter les territoires
+### Événements
+- `/events`, `/trigger-event`
 
-### 🕊️ Diplomatie
-- `/alliance` - Gérer les alliances
-- `/négocier` - Négocier avec un pays
-- `/embargo` - Mettre un embargo (Chef d'État)
+---
 
-### 🔧 Administration
-- `/create` - Créer un pays (Admin)
-- `/own` - Assigner un pays à un joueur (Admin)
-- `/admin-list` - Lister tous les pays (Admin)
-- `/delete` - Supprimer des éléments d'un pays (Admin)
-- `/web-panel` - Obtenir l'URL du panel web (Admin)
+## 🌐 Panel d’Administration Web
 
-### 📅 Événements
-- `/events` - Consulter les événements récents
-- `/trigger-event` - Déclencher un événement (Admin)
+Accessible uniquement aux admins Discord via `/web-panel`  
+**Interface moderne et responsive — thème dark, sécurité OAuth2, tableau de bord temps réel !**
 
-## 🌐 Panel d'Administration Web
+### Fonctionnalités majeures :
+- **Statistiques graphiques en temps réel**
+- **Gestion avancée pays, joueurs, guerre, événements**
+- **Outils d’admin (reset, backup, logs Discord riches)**
+- **Optimisation performance (Socket.IO, cache, rate limiting, monitoring healthz)**
 
-Le bot inclut un **panel d'administration web complet** accessible via `/web-panel` :
+---
 
-### 🎯 Fonctionnalités du Panel
-- **Dashboard en temps réel** : Statistiques et graphiques
-- **Gestion complète des pays** : CRUD avec interface graphique
-- **Administration des joueurs** : Modification des rôles et ressources
-- **Contrôle des guerres** : Suivi et gestion des conflits
-- **Outils avancés** : Réinitialisation, sauvegarde, logs
-
-### 🔐 Accès
-- **URL** : http://localhost:5000 (par défaut)
-- **Authentification** : Discord OAuth2
-- **Permissions** : Seuls les administrateurs Discord
-
-## ⚙️ Configuration
-
-### Variables d'Environnement Requises
+## ⚙️ Configuration (exemple)
 
 ```env
-# Bot Discord
-DISCORD_TOKEN=your_discord_bot_token
-DISCORD_GUILD_ID=your_guild_id
+# Discord
+DISCORD_TOKEN=YOUR_TOKEN
+DISCORD_GUILD_ID=123456789012345678
 
 # Supabase
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your_supabase_anon_key
 
 # Admin
-ADMIN_ROLE_IDS=1234567890123456789,9876543210987654321
+ADMIN_ROLE_IDS=111222333,444555666
 
 # Panel Web
-DISCORD_CLIENT_ID=your_discord_client_id
-DISCORD_CLIENT_SECRET=your_discord_client_secret
+DISCORD_CLIENT_ID=clientid
+DISCORD_CLIENT_SECRET=secret
 DISCORD_REDIRECT_URI=http://localhost:5000/callback
-WEB_SECRET_KEY=wd_admin_2024_secure_key_9f8e7d6c5b4a3928f1e0d9c8b7a6958473625140
+WEB_SECRET_KEY=xxxx   # Long et random !
 WEB_PANEL_URL=http://localhost:5000
 ```
 
-### Configuration Discord OAuth
+---
 
-1. Aller sur [Discord Developer Portal](https://discord.com/developers/applications)
-2. Sélectionner votre application
-3. Aller dans "OAuth2" → "General"
-4. Ajouter `http://localhost:5000/callback` dans "Redirects"
-5. Copier le Client ID et Client Secret
+## 🗄️ Base de Données (Supabase)
 
-## 🗄️ Base de Données
+- `countries` : infos pays
+- `players` : joueurs
+- `wars` : guerres
+- `events` : logs historiques
+- `alliances` : alliances (optionnel)
 
-Le bot utilise **Supabase** (PostgreSQL) avec les tables suivantes :
-- `countries` - Informations des pays
-- `players` - Données des joueurs
-- `wars` - Historique des guerres
-- `events` - Événements du jeu
-- `alliances` - Alliances entre pays
+---
 
 ## 🏗️ Architecture
 
 ```
 World Dominion/
-├── main.py              # Point d'entrée du bot
-├── start.py             # Script de démarrage complet
-├── config.py            # Configuration
-├── cogs/                # Modules du bot
-│   ├── economy.py       # Commandes économiques
-│   ├── politics.py      # Commandes politiques
-│   ├── military.py      # Commandes militaires
-│   ├── diplomacy.py     # Commandes diplomatiques
-│   ├── country.py       # Gestion des pays
-│   ├── admin.py         # Commandes admin
-│   ├── events.py        # Système d'événements
-│   └── web_panel.py     # Commande panel web
-├── db/                  # Base de données
-│   └── supabase.py      # Interface Supabase
-├── utils/               # Utilitaires
-│   ├── embeds.py        # Embeds Discord
-│   └── logger.py        # Système de logs
-└── web/                 # Panel d'administration
-    ├── app.py           # Application Flask
-    ├── run.py           # Démarrage du panel
-    └── templates/       # Interface web
+├── start.py               # Point d’entrée unique
+├── config.py              # Config centralisée et typage
+├── cogs/                  # Modules Discord (commandes thématiques)
+├── db/                    # Couche Supabase
+├── utils/                 # Helpers, logs, embeds Discord
+└── web/                   # Panel d’admin (Flask, Socket.IO, UI, statique)
 ```
-
-## 🚨 Dépannage
-
-### Problèmes Courants
-
-**Bot ne démarre pas** :
-- Vérifier les variables d'environnement
-- S'assurer que le token Discord est valide
-- Vérifier la connexion Supabase
-
-**Panel web inaccessible** :
-- Vérifier que le port 5000 est libre
-- Configurer correctement Discord OAuth
-- Vérifier les permissions admin
-
-**Erreurs de base de données** :
-- Vérifier la connexion Supabase
-- S'assurer que les tables existent
-- Vérifier les permissions de l'API
-
-### Logs
-Les logs sont disponibles dans le dossier `logs/` et dans la console.
-
-## 🤝 Support
-
-Pour toute question ou problème :
-1. Vérifier les logs de la console
-2. Consulter la documentation Discord
-3. Vérifier la configuration Supabase
-4. Contacter l'équipe de développement
+- **Séparation claire backend / frontend / bot**
+- **Code DRY et décorateurs pour la sécurité/optimisation**
 
 ---
 
-**World Dominion** - Dominez le monde par la stratégie ! 🌍👑
+## 🛡️ Sécurité, Monitoring et Qualité
+
+- **OAuth2 Discord** — accès restreint admin
+- **Rate limiting natif** — protection sur tous les endpoints API
+- **Caching intelligent** — performance et économie du back
+- **Healthcheck** — `/healthz` monitoring déploiement/cloud
+- **Logs enrichis** — Discord/console/riches pour debug
+
+---
+
+## 🚨 Dépannage Rapide
+
+- **Erreur de démarrage ?** → Vérifiez `.env`, les rôles Discord, la DB.
+- **Panel web inaccessible** ? → Check port 5000, OAuth, autorisations Discord.
+- **Erreurs DB** ? → Tables existantes, clés SUPABASE ?
+
+---
+
+## 🤝 Support et Contribution
+
+1. Vérifiez les logs sur Render.com, Discord et la console Python
+2. Consultez la documentation du code
+3. Ouvrez une Issue ou une PR sur GitHub
+4. Contact direct via le serveur Discord World Dominion
+
+---
+
+## 📜 Licence
+
+MIT License  
+**Développé avec ❤️ pour la stratégie et la diplomatie sur Discord**
+
+---
+
+**World Dominion** — Dominez le monde… ou coopérez pour survivre. 🌍👑
+
+---
+
+*README prêt à être copié/collé et à valoriser ton projet sur GitHub/render !*
+Tu veux des sections de badges, GIFs, screenshots ou doc avancée ? Demande 😉
