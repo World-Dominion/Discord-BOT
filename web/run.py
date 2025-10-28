@@ -59,8 +59,12 @@ print("⚠️  Pour arrêter le serveur, utilisez Ctrl+C")
 print()
 
 # Importer et démarrer l'application
+# NE PAS démarrer de serveur web ici côté Render, utiliser seulement start.py comme entrypoint !
+# if __name__ == "__main__":
+#     from app import socketio, app
+#     port = int(os.environ.get('PORT', 5000))
+#     socketio.run(app, debug=False, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
 if __name__ == "__main__":
-    from app import socketio, app
-    port = int(os.environ.get('PORT', 5000))
-    socketio.run(app, debug=False, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
+    print("[ATTENTION] Pour lancer le serveur web/discord sur Render, utilisez start.py comme point d'entrée unique !")
+    print("Ce fichier n'est utilisé que pour développement local.")
 
