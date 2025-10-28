@@ -4,7 +4,7 @@ let currentData = { countries: [], players: [], wars: [], events: [] };
 
 // Socket.IO (AMÉLIORÉ)
 const socket = io({
-  transports: ['websocket', 'polling'],
+  transports: ['polling'], // force long-polling pour compat Render/Werkzeug
   timeout: 20000,
   reconnection: true,
   reconnectionDelay: 1000,

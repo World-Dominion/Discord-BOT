@@ -13,6 +13,9 @@ socketio = SocketIO(
     app,
     cors_allowed_origins="*",
     async_mode=os.getenv('SOCKETIO_ASYNC_MODE', 'threading'),
+    logger=False,
+    engineio_logger=False,
+    allow_upgrades=False  # force long-polling, évite websocket avec Werkzeug
 )
 
 # Configuration
@@ -487,6 +490,8 @@ def api_trigger_event():
                     'impact': event['impact'],
                     'created_at': datetime.now().isoformat()
                 }
+            else:
+                return jsonify({'error': 'Aucun pays disponible pour générer un événement'}), 400
         
         # Validation minimale
         if not isinstance(data, dict) or 'type' not in data:
