@@ -28,11 +28,11 @@ class AdminCog(commands.Cog):
     @app_commands.command(name="give", description="Donner une ressource ou de l'argent (Admin)")
     @app_commands.describe(
         target_type="Type de cible: player/country/all_players/all_countries",
-        target_id="ID interne de la cible (players.id ou countries.id)",
+        target_user="Utilisateur Discord (@mention) - requis pour 'player' et 'country'",
         resource="balance pour joueur, ou money/food/metal/oil/energy/materials pour pays",
         amount="Montant à donner"
     )
-    async def give(self, interaction: discord.Interaction, target_type: str, resource: str, amount: int, target_id: str = None):
+    async def give(self, interaction: discord.Interaction, target_type: str, resource: str, amount: int, target_user: discord.Member = None):
         """Commande admin /give"""
         if not await self.is_admin(interaction):
             await interaction.response.send_message(
@@ -47,23 +47,21 @@ class AdminCog(commands.Cog):
             )
             return
         try:
-            # Cas joueur spécifique: target_id peut être vide => on prend l'appelant
-            if target_type == 'player' and not target_id:
-                player = await db.get_player(str(interaction.user.id))
-                if not player:
-                    await interaction.response.send_message(embed=GameEmbeds.error_embed("Joueur introuvable."), ephemeral=True)
-                    return
-                target_id = player['id']
-            # Appliquer dons via DB manager
+            # NOUVEAU : Simplification avec Discord Member
             if target_type == 'player':
                 # balance seulement
                 if resource not in ['balance', 'money']:
                     await interaction.response.send_message(embed=GameEmbeds.error_embed("Ressource invalide pour un joueur."), ephemeral=True)
                     return
-                target_player = await db.get_player_by_id(target_id)
+                
+                if not target_user:
+                    target_user = interaction.user  # Utiliser l'appelant si pas spécifié
+                
+                target_player = await db.get_player(str(target_user.id))
                 if not target_player:
-                    await interaction.response.send_message(embed=GameEmbeds.error_embed("Joueur introuvable."), ephemeral=True)
+                    await interaction.response.send_message(embed=GameEmbeds.error_embed(f"Joueur {target_user.mention} introuvable."), ephemeral=True)
                     return
+                
                 new_balance = (target_player.get('balance', 0) or 0) + amount
                 await db.update_player(target_player['discord_id'], {'balance': new_balance})
             elif target_type in ['country', 'all_countries']:
@@ -71,7 +69,16 @@ class AdminCog(commands.Cog):
                     await interaction.response.send_message(embed=GameEmbeds.error_embed("Ressource invalide pour un pays."), ephemeral=True)
                     return
                 if target_type == 'country':
-                    country = await db.get_country(target_id)
+                    if not target_user:
+                        await interaction.response.send_message(embed=GameEmbeds.error_embed("Pour cibler un pays spécifique, mentionnez un joueur de ce pays."), ephemeral=True)
+                        return
+                    
+                    player_data = await db.get_player(str(target_user.id))
+                    if not player_data or not player_data.get('country_id'):
+                        await interaction.response.send_message(embed=GameEmbeds.error_embed(f"{target_user.mention} n'est dans aucun pays."), ephemeral=True)
+                        return
+                    
+                    country = await db.get_country(player_data['country_id'])
                     if not country:
                         await interaction.response.send_message(embed=GameEmbeds.error_embed("Pays introuvable."), ephemeral=True)
                         return
@@ -95,7 +102,10 @@ class AdminCog(commands.Cog):
             else:
                 await interaction.response.send_message(embed=GameEmbeds.error_embed("target_type invalide."), ephemeral=True)
                 return
-            embed = discord.Embed(title="🎁 Don effectué", description=f"{amount} {resource} → {target_type}", color=0x00ff00)
+            
+            # Embed amélioré
+            target_name = target_user.mention if target_user else target_type
+            embed = discord.Embed(title="🎁 Don effectué", description=f"{amount} {resource} → {target_name} ({target_type})", color=0x00ff00)
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except Exception as e:
             await interaction.response.send_message(embed=GameEmbeds.error_embed("Erreur lors du don."), ephemeral=True)
