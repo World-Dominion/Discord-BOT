@@ -964,8 +964,7 @@ function resetAllStats() {
 
 function backupDatabase() {
     showAlert('info', 'Sauvegarde en cours...');
-    
-    fetch('/api/backup')
+    fetch('/api/tools/backup', { method: 'POST' })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
